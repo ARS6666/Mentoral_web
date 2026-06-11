@@ -34,7 +34,7 @@ export default function Home({
       bg: "#ecfdf5",
       border: "#bbf7d0",
       buttonText: "مشاهده برنامه امروز",
-      ref: 'today',
+      ref: '/today',
     },
     {
       title: "دستیار برنامه‌ریزی",
@@ -44,7 +44,7 @@ export default function Home({
       bg: "#eef2ff",
       border: "#c7d2fe",
       buttonText: "ساخت برنامه",
-      ref: 'planningassistant',
+      ref: '/planningassistant',
 
     },
     {
@@ -55,7 +55,7 @@ export default function Home({
       bg: "#fffbeb",
       border: "#fde68a",
       buttonText: "رفتن به مربی",
-      ref: 'tutor ',
+      ref: '/tutor ',
 
     },
     {
@@ -66,7 +66,7 @@ export default function Home({
       bg: "#fef2f2",
       border: "#fecaca",
       buttonText: "دیدن گزارش‌ها",
-      ref: 'reports',
+      ref: '/reports',
 
     },
   ];
