@@ -7,10 +7,17 @@ import {
 } from "lucide-react";
 
 export default function Profile({ profile, onUpdateProfile, onResetAll }) {
-  const [grade, setGrade] = useState(profile.grade);
-  const [major, setMajor] = useState(profile.major);
-  const [targetRank, setTargetRank] = useState(profile.targetRank);
-  const [studyHours, setStudyHours] = useState(profile.studyHours);
+  const safeProfile = profile || {
+    grade: "یازدهم",
+    major: "تجربی",
+    targetRank: "",
+    studyHours: 6,
+  };
+
+  const [grade, setGrade] = useState(safeProfile.grade);
+  const [major, setMajor] = useState(safeProfile.major);
+  const [targetRank, setTargetRank] = useState(safeProfile.targetRank);
+  const [studyHours, setStudyHours] = useState(safeProfile.studyHours);
   const [isSaved, setIsSaved] = useState(false);
 
   const handleSave = async (e) => {
@@ -26,7 +33,9 @@ export default function Profile({ profile, onUpdateProfile, onResetAll }) {
 
       if (response.ok) {
         const data = await response.json();
-        onUpdateProfile(data.profile);
+        if (onUpdateProfile) {
+          onUpdateProfile(data.profile);
+        }
         setTimeout(() => setIsSaved(false), 2000);
       } else {
         setIsSaved(false);
@@ -42,12 +51,11 @@ export default function Profile({ profile, onUpdateProfile, onResetAll }) {
       className="container py-4"
       style={{
         maxWidth: "800px",
-        fontFamily: "Tahoma, Arial, sans-serif",
+        fontFamily: "Vazir,Tahoma, Arial, sans-serif",
         direction: "rtl",
       }}
     >
       <div className="d-flex flex-column gap-4">
-        {/* Top profile identity frame */}
         <div
           className="bg-white border shadow-sm text-center p-4"
           style={{ borderRadius: "24px", borderColor: "#f1f3f5" }}
@@ -63,33 +71,32 @@ export default function Profile({ profile, onUpdateProfile, onResetAll }) {
               fontWeight: "bold",
             }}
           >
-            {profile.major ? profile.major.charAt(0) : "U"}
+            {major ? major.charAt(0) : "U"}
           </div>
+
           <div className="mt-3">
             <h3 className="mb-1 fw-bolder text-dark" style={{ fontSize: "16px" }}>
               داوطلب کنکور منتورا
             </h3>
             <p className="text-muted mb-0" style={{ fontSize: "11px" }}>
-              پایه تحصیلی {profile.grade} • رشته {profile.major}
+              پایه تحصیلی {grade} • رشته {major}
             </p>
           </div>
         </div>
 
-        {/* Main settings form */}
         <form
           onSubmit={handleSave}
           className="bg-white border shadow-sm p-4 text-end"
           style={{ borderRadius: "24px", borderColor: "#f1f3f5" }}
         >
           <h3
-            className="d-flex align-items-center justify-content-end gap-2 fw-bold text-dark mb-4"
+            className="d-flex align-items-center justify-content-start gap-2 fw-bold text-dark mb-4"
             style={{ fontSize: "13px" }}
           >
-            تنظیمات برنامه و هدف‌گذاری شما
             <Settings size={15} color="#6255f5" />
+            تنظیمات برنامه و هدف‌گذاری شما
           </h3>
 
-          {/* Grade Toggle */}
           <div className="mb-4">
             <label
               className="d-flex align-items-center justify-content-end gap-2 text-muted fw-bold mb-2"
@@ -104,7 +111,7 @@ export default function Profile({ profile, onUpdateProfile, onResetAll }) {
                   <button
                     type="button"
                     onClick={() => setGrade(g)}
-                    className="btn w-100 fw-bold transition-all"
+                    className="btn w-100 fw-bold"
                     style={{
                       fontSize: "12px",
                       borderRadius: "12px",
@@ -121,7 +128,6 @@ export default function Profile({ profile, onUpdateProfile, onResetAll }) {
             </div>
           </div>
 
-          {/* Major Toggle */}
           <div className="mb-4">
             <label
               className="d-flex align-items-center justify-content-end gap-2 text-muted fw-bold mb-2"
@@ -136,7 +142,7 @@ export default function Profile({ profile, onUpdateProfile, onResetAll }) {
                   <button
                     type="button"
                     onClick={() => setMajor(m)}
-                    className="btn w-100 fw-bold transition-all"
+                    className="btn w-100 fw-bold"
                     style={{
                       fontSize: "12px",
                       borderRadius: "12px",
@@ -153,7 +159,6 @@ export default function Profile({ profile, onUpdateProfile, onResetAll }) {
             </div>
           </div>
 
-          {/* Input Target Rank */}
           <div className="mb-4">
             <label className="d-block text-muted fw-bold mb-2" style={{ fontSize: "11px" }}>
               رتبه یا تراز فرضی هدف
@@ -173,7 +178,6 @@ export default function Profile({ profile, onUpdateProfile, onResetAll }) {
             />
           </div>
 
-          {/* Slider Daily Hours */}
           <div className="mb-4">
             <div className="d-flex justify-content-between align-items-center mb-2">
               <span
@@ -217,7 +221,6 @@ export default function Profile({ profile, onUpdateProfile, onResetAll }) {
           </button>
         </form>
 
-        {/* Security Card */}
         <div
           className="bg-white border shadow-sm p-4 text-end"
           style={{ borderRadius: "24px", borderColor: "#f1f3f5" }}
@@ -230,7 +233,7 @@ export default function Profile({ profile, onUpdateProfile, onResetAll }) {
             <Shield size={15} color="#6255f5" />
           </h3>
           <p className="text-muted mb-4" style={{ fontSize: "11px", lineHeight: "1.8" }}>
-            اطلاعات شما به صورت محلی در بستر کوکی‌ها و توکن‌های پلتفرم و ایمپلنت والدین بر طبق حریم خصوصی منتورا حفاظت می‌شود. هیچ معلم یا دانش‌آموز غیر مجازی به گزارش‌های تراز آزمون‌ها دسترسی نخواهد داشت.
+            اطلاعات شما به صورت محلی نگهداری می‌شود و فقط برای شخصی‌سازی برنامه استفاده خواهد شد.
           </p>
           <button
             type="button"

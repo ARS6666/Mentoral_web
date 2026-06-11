@@ -12,10 +12,11 @@ import Practice from './components/Practice';
 import PlanningAssistant from './components/PlanningAssistant';
 import Login from './components/Login';
 import FocusTimer from './components/FocusTimer';
+import './index.css'
 
 const AppContent = () => {
   return (
-    <div className="main-content">
+    <div className="main-content Vazir">
       <Routes>
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/tutor" element={<Tutor />} />
