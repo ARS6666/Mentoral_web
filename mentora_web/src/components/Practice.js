@@ -49,8 +49,8 @@ export default function Practice({ onAskTutor }) {
       className="container py-4"
       style={{
         maxWidth: "860px",
-        fontFamily: "Tahoma, Arial, sans-serif",
         direction: "rtl",
+        fontFamily: "Vazir, Tahoma, Arial, sans-serif",
       }}
     >
       <div className="d-flex flex-column gap-3">
