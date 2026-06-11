@@ -1,6 +1,7 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 
-const Login = ({ onSubmit, onNavigateToSignIn }) => {
+const Login = ({ onSubmit }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
@@ -18,7 +19,8 @@ const Login = ({ onSubmit, onNavigateToSignIn }) => {
       className="min-vh-100 d-flex align-items-center justify-content-center px-3"
       style={{
         background: "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)",
-        fontFamily: "Inter, Arial, sans-serif",
+        fontFamily: "Vazir, Inter, Arial, sans-serif",
+        direction: "rtl",
       }}
     >
       <div
@@ -31,7 +33,7 @@ const Login = ({ onSubmit, onNavigateToSignIn }) => {
           borderColor: "#e2e8f0",
         }}
       >
-        <div className="text-center mb-4">
+        <div className="text-center mb-3">
           <h1
             className="fw-bold mb-2"
             style={{
@@ -39,8 +41,9 @@ const Login = ({ onSubmit, onNavigateToSignIn }) => {
               color: "#0f172a",
             }}
           >
-            Welcome Back
+            خوش برگشتی!
           </h1>
+
           <p
             className="mb-0"
             style={{
@@ -48,100 +51,78 @@ const Login = ({ onSubmit, onNavigateToSignIn }) => {
               color: "#64748b",
             }}
           >
-            Log in to continue to your account
+            وارد شو تا با حساب کاربری خودت ادامه بدی
           </p>
         </div>
 
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
             <label
-              className="form-label fw-semibold"
+              className="form-label fw-semibold d-flex align-items-center justify-content-start"
               style={{
                 fontSize: "14px",
                 color: "#334155",
               }}
             >
-              Email
+              ایمیل
             </label>
+
             <input
               type="email"
               className="form-control"
-              placeholder="Enter your email"
+              placeholder="ایمیل خود را وارد کنید"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              style={{
-                padding: "14px 16px",
-                borderRadius: "14px",
-                borderColor: "#cbd5e1",
-                fontSize: "14px",
-              }}
+              style={inputStyle}
             />
           </div>
 
           <div className="mb-3">
             <label
-              className="form-label fw-semibold"
+              className="form-label fw-semibold d-flex align-items-center justify-content-start"
               style={{
                 fontSize: "14px",
                 color: "#334155",
               }}
             >
-              Password
+              رمز عبور
             </label>
 
             <div className="position-relative d-flex align-items-center">
               <input
                 type={showPassword ? "text" : "password"}
                 className="form-control"
-                placeholder="Enter your password"
+                placeholder="رمز عبور خود را وارد کنید"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 style={{
-                  padding: "14px 16px",
-                  paddingRight: "72px",
-                  borderRadius: "14px",
-                  borderColor: "#cbd5e1",
-                  fontSize: "14px",
+                  ...inputStyle,
+                  paddingLeft: "72px",
                 }}
               />
+
               <button
                 type="button"
                 onClick={() => setShowPassword((prev) => !prev)}
-                className="btn position-absolute"
+                className="btn position-absolute start-0"
                 style={{
-                  right: "12px",
                   border: "none",
                   background: "transparent",
                   color: "#2563eb",
                   fontWeight: 600,
                   fontSize: "13px",
                   boxShadow: "none",
+                  marginLeft: "12px",
                 }}
               >
-                {showPassword ? "Hide" : "Show"}
+                {showPassword ? "🙊" : "🙈"}
               </button>
             </div>
           </div>
 
           <div className="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-3">
-            <label
-              className="d-flex align-items-center gap-2"
-              style={{
-                fontSize: "14px",
-                color: "#475569",
-              }}
-            >
-              <input
-                type="checkbox"
-                className="form-check-input m-0"
-                checked={remember}
-                onChange={(e) => setRemember(e.target.checked)}
-              />
-              <span style={{ fontSize: "14px" }}>Remember me</span>
-            </label>
-
             <button
               type="button"
               className="btn p-0"
@@ -150,13 +131,29 @@ const Login = ({ onSubmit, onNavigateToSignIn }) => {
                 background: "transparent",
                 color: "#2563eb",
                 cursor: "pointer",
-                fontSize: "14px",
+                fontSize: "12px",
                 fontWeight: 600,
                 boxShadow: "none",
               }}
             >
-              Forgot password?
+              رمز عبورت را فراموش کرده‌ای؟
             </button>
+
+            <label
+              className="d-flex align-items-center gap-2"
+              style={{
+                fontSize: "14px",
+                color: "#475569",
+              }}
+            >
+              <span style={{ fontSize: "12px" }}>مرا به خاطر بسپار</span>
+              <input
+                type="checkbox"
+                className="form-check-input m-0"
+                checked={remember}
+                onChange={(e) => setRemember(e.target.checked)}
+              />
+            </label>
           </div>
 
           <button
@@ -172,7 +169,7 @@ const Login = ({ onSubmit, onNavigateToSignIn }) => {
               fontSize: "15px",
             }}
           >
-            Log In
+            ورود
           </button>
         </form>
 
@@ -183,11 +180,11 @@ const Login = ({ onSubmit, onNavigateToSignIn }) => {
               fontSize: "14px",
             }}
           >
-            Don’t have an account?
+            حساب کاربری نداری؟
           </span>
-          <button
-            type="button"
-            onClick={onNavigateToSignIn}
+
+          <Link
+            to="/signin"
             className="btn p-0 fw-bold"
             style={{
               border: "none",
@@ -195,14 +192,24 @@ const Login = ({ onSubmit, onNavigateToSignIn }) => {
               color: "#2563eb",
               fontSize: "14px",
               boxShadow: "none",
+              textDecoration: "none",
             }}
           >
-            Sign In
-          </button>
+            ایجاد حساب کاربری
+          </Link>
         </div>
       </div>
     </div>
   );
+};
+
+const inputStyle = {
+  width: "100%",
+  padding: "14px 16px",
+  borderRadius: "14px",
+  border: "1px solid #cbd5e1",
+  fontSize: "14px",
+  backgroundColor: "#ffffff",
 };
 
 export default Login;

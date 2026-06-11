@@ -25,7 +25,7 @@ const AppContent = () => {
         <Route path="/reports" element={<Reports />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/practice" element={<Practice />} />
-        <Route path="/plannignassisatant" element={<PlanningAssistant />} />
+        <Route path="/planningassisatant" element={<PlanningAssistant />} />
         <Route path="/login" element={<Login />} />
         <Route path="/focustimer" element={<FocusTimer />} />
       </Routes>
