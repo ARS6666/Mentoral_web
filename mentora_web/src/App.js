@@ -11,6 +11,7 @@ import Profile from './components/Profile';
 import Practice from './components/Practice';
 import PlanningAssistant from './components/PlanningAssistant';
 import Login from './components/Login';
+import FocusTimer from './components/FocusTimer';
 
 const AppContent = () => {
   return (
@@ -25,6 +26,7 @@ const AppContent = () => {
         <Route path="/practice" element={<Practice />} />
         <Route path="/plannignassisatant" element={<PlanningAssistant />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/focustimer" element={<FocusTimer />} />
       </Routes>
     </div>
   );
