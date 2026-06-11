@@ -9,7 +9,7 @@ import {
 
 export default function Reports({ profile }) {
   const topics =
-    profile.major === "ریاضی"
+    profile?.major === "ریاضی"
       ? [
           { name: "حد و بیوستگی", level: "خوب", color: "#10b981", percent: 85 },
           { name: "هندسه تحلیلی", level: "نیازمند مرور", color: "#fbbf24", percent: 62 },
@@ -35,8 +35,8 @@ export default function Reports({ profile }) {
       className="container py-4"
       style={{
         maxWidth: "860px",
-        fontFamily: "Tahoma, Arial, sans-serif",
         direction: "rtl",
+        fontFamily: "Vazir, Tahoma, Arial, sans-serif",
       }}
     >
       <div className="d-flex flex-column gap-3">
@@ -50,7 +50,7 @@ export default function Reports({ profile }) {
           }}
         >
           <h2
-            className="d-flex align-items-center justify-content-end gap-2 fw-bold text-dark mb-4"
+            className="d-flex align-items-center justify-content-start gap-2 fw-bold text-dark mb-4"
             style={{ fontSize: "14px" }}
           >
             روند وضعیت تحصیلی شما
@@ -150,7 +150,14 @@ export default function Reports({ profile }) {
           }}
         >
           <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
-            <div
+            <h3
+              className="d-flex align-items-center gap-2 fw-bold text-dark mb-0"
+              style={{ fontSize: "12px" }}
+            >
+              تخمین پایداری مباحث تحصیلی
+              <Book size={15} color="#6255f5" />
+            </h3>
+                        <div
               className="d-flex gap-3 flex-wrap"
               style={{ fontSize: "10px", fontWeight: 700 }}
             >
@@ -194,13 +201,6 @@ export default function Reports({ profile }) {
               </span>
             </div>
 
-            <h3
-              className="d-flex align-items-center gap-2 fw-bold text-dark mb-0"
-              style={{ fontSize: "12px" }}
-            >
-              تخمین پایداری مباحث تحصیلی
-              <Book size={15} color="#6255f5" />
-            </h3>
           </div>
 
           <div className="row g-4">
@@ -269,7 +269,7 @@ export default function Reports({ profile }) {
 
           <div className="flex-grow-1">
             <h4
-              className="d-flex align-items-center justify-content-end gap-2 fw-bold mb-2"
+              className="d-flex align-items-center justify-content-start gap-2 fw-bold mb-2"
               style={{
                 fontSize: "12px",
                 color: "#9f1239",
@@ -309,7 +309,7 @@ export default function Reports({ profile }) {
           }}
         >
           <h3
-            className="d-flex align-items-center justify-content-end gap-2 fw-bold text-dark mb-3"
+            className="d-flex align-items-center justify-content-start gap-2 fw-bold text-dark mb-3"
             style={{ fontSize: "12px" }}
           >
             مدال‌ها و دستاوردهای شما
