@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 
 const Signin = ({ onSubmit, onNavigateToLogin }) => {
   const [fullName, setFullName] = useState("");
@@ -20,16 +21,17 @@ const Signin = ({ onSubmit, onNavigateToLogin }) => {
   };
 
   return (
-    <div 
-      className="d-flex align-items-center justify-content-center min-vh-100" 
+    <div
+      className="d-flex align-items-center justify-content-center min-vh-100"
       style={{
         background: "linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)",
         padding: "24px",
-        fontFamily: "Inter, Arial, sans-serif"
+        fontFamily: "Vazir, Arial, sans-serif",
+        direction: "rtl"
       }}
     >
-      <div 
-        className="card border-0 shadow-lg w-100" 
+      <div
+        className="card border-0 shadow-lg w-100"
         style={{
           maxWidth: "460px",
           borderRadius: "24px",
@@ -40,21 +42,22 @@ const Signin = ({ onSubmit, onNavigateToLogin }) => {
       >
         <div className="text-center mb-4">
           <h1 className="fw-bold mb-2" style={{ fontSize: "30px", color: "#0f172a" }}>
-            Create Account
+            ایجاد حساب کاربری
           </h1>
           <p style={{ fontSize: "14px", color: "#64748b" }}>
-            Sign up and start your journey
+            ثبت‌نام کنید و مسیر یادگیری خود را شروع کنید
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="d-flex flex-column gap-3">
+          
           <div className="d-flex flex-column gap-2">
             <label className="fw-semibold" style={{ fontSize: "14px", color: "#334155" }}>
-              Full Name
+              نام و نام خانوادگی
             </label>
             <input
               type="text"
-              placeholder="Enter your full name"
+              placeholder="نام کامل خود را وارد کنید"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               className="form-control"
@@ -65,11 +68,11 @@ const Signin = ({ onSubmit, onNavigateToLogin }) => {
 
           <div className="d-flex flex-column gap-2">
             <label className="fw-semibold" style={{ fontSize: "14px", color: "#334155" }}>
-              Email
+              ایمیل
             </label>
             <input
               type="email"
-              placeholder="Enter your email"
+              placeholder="ایمیل خود را وارد کنید"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="form-control"
@@ -80,36 +83,39 @@ const Signin = ({ onSubmit, onNavigateToLogin }) => {
 
           <div className="d-flex flex-column gap-2">
             <label className="fw-semibold" style={{ fontSize: "14px", color: "#334155" }}>
-              Password
+              رمز عبور
             </label>
+
             <div className="position-relative d-flex align-items-center">
               <input
                 type={showPassword ? "text" : "password"}
-                placeholder="Create a password"
+                placeholder="یک رمز عبور انتخاب کنید"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="form-control"
-                style={{ ...inputStyle, paddingRight: "72px" }}
+                style={{ ...inputStyle, paddingLeft: "72px" }}
                 required
               />
+
               <button
                 type="button"
                 onClick={() => setShowPassword((prev) => !prev)}
-                className="btn position-absolute end-0 border-0 bg-transparent fw-bold"
-                style={{ color: "#2563eb", fontSize: "13px", marginRight: "12px" }}
+                className="btn position-absolute start-0 border-0 bg-transparent fw-bold"
+                style={{ color: "#2563eb", fontSize: "18px", marginLeft: "12px" }}
               >
-                {showPassword ? "Hide" : "Show"}
+                {showPassword ? "🙊" : "🙈"}
               </button>
             </div>
           </div>
 
           <div className="d-flex flex-column gap-2">
             <label className="fw-semibold" style={{ fontSize: "14px", color: "#334155" }}>
-              Confirm Password
+              تکرار رمز عبور
             </label>
+
             <input
               type={showPassword ? "text" : "password"}
-              placeholder="Confirm your password"
+              placeholder="رمز عبور را دوباره وارد کنید"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="form-control"
@@ -118,9 +124,9 @@ const Signin = ({ onSubmit, onNavigateToLogin }) => {
             />
           </div>
 
-          <button 
-            type="submit" 
-            className="btn w-100 fw-bold mt-2" 
+          <button
+            type="submit"
+            className="btn w-100 fw-bold mt-2"
             style={{
               padding: "14px 18px",
               borderRadius: "14px",
@@ -130,22 +136,23 @@ const Signin = ({ onSubmit, onNavigateToLogin }) => {
               border: "none"
             }}
           >
-            Sign Up
+            ثبت‌نام
           </button>
         </form>
 
         <div className="d-flex justify-content-center align-items-center gap-2 mt-4 flex-wrap">
           <span style={{ color: "#64748b", fontSize: "14px" }}>
-            Already have an account?
+            قبلاً حساب ساخته‌اید؟
           </span>
-          <button 
-            type="button" 
-            onClick={onNavigateToLogin} 
+
+          <Link
+            type="button"
+            to='/login'
             className="btn btn-link p-0 fw-bold text-decoration-none"
             style={{ color: "#2563eb", fontSize: "14px" }}
           >
-            Log In
-          </button>
+            ورود
+          </Link>
         </div>
       </div>
     </div>
