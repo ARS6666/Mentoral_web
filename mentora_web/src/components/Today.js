@@ -9,31 +9,6 @@ import {
   Clock,
 } from "lucide-react";
 
-type Profile = {
-  targetRank?: string | number;
-  major?: string;
-  name?: string;
-  grade?: string | number;
-};
-
-type Task = {
-  id: string | number;
-  title?: string;
-  duration?: string;
-  category?: string;
-  completed?: boolean;
-};
-
-type TodayProps = {
-  profile?: Profile;
-  tasks?: Task[];
-  onToggleTask?: (id: string | number, completed: boolean) => void;
-  readinessScore?: number;
-  streakCount?: number;
-  xpPoints?: number;
-  calendarDate?: string;
-};
-
 export default function Today({
   profile,
   tasks = [],
@@ -42,11 +17,11 @@ export default function Today({
   streakCount = 0,
   xpPoints = 0,
   calendarDate,
-}: TodayProps) {
-  const safeProfile: Profile =
+}) {
+  const safeProfile =
     profile && typeof profile === "object" ? profile : {};
 
-  const safeTasks: Task[] = Array.isArray(tasks) ? tasks : [];
+  const safeTasks = Array.isArray(tasks) ? tasks : [];
 
   const completedCount = safeTasks.filter((t) => t?.completed).length;
 
@@ -67,12 +42,12 @@ export default function Today({
       ? "پیشرفت بزرگ، حاصل قدم‌های کوچک اما پیوسته است. امروز هم با تمرکز و اعتمادبه‌نفس جلو برو؛ آینده با تلاش تو ساخته می‌شود."
       : "هر قدمی که امروز برمی‌داری، تو را به هدفت نزدیک‌تر می‌کند. با تمرکز، نظم و امید ادامه بده.";
 
-  const handleToggleTask = (task: Task) => {
+  const handleToggleTask = (task) => {
     if (!onToggleTask || task?.id === undefined || task?.id === null) return;
     onToggleTask(task.id, !task.completed);
   };
 
-  const getCategoryStyles = (category?: string) => {
+  const getCategoryStyles = (category) => {
     switch (category) {
       case "زیست‌شناسی":
         return {
