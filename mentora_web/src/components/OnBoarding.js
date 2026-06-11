@@ -39,7 +39,7 @@ const Onboarding = ({ onComplete }) => {
       className="min-vh-100 d-flex align-items-center justify-content-center p-3"
       style={{
         background: "linear-gradient(to bottom, #f8fafc, #eef2f6)",
-        fontFamily: "Tahoma, Arial, sans-serif",
+        fontFamily: "Vazir ,Tahoma, Arial, sans-serif",
         direction: "rtl"
       }}
     >
