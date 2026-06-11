@@ -25,7 +25,7 @@ export default function PlanningAssistant({ profile }) {
   const [studentName, setStudentName] = useState("دانش‌آموز منتورا");
   const [grade, setGrade] = useState((profile && profile.grade) || "دوازدهم");
   const [major, setMajor] = useState((profile && profile.major) || "تجربی");
-  const [examYear, setExamYear] = useState("1405");
+  const [examYear, setExamYear] = useState("۱۴۰۵");
   const [goal, setGoal] = useState(
     profile && profile.targetRank
       ? `رسیدن به رتبه ${profile.targetRank}`
@@ -36,7 +36,7 @@ export default function PlanningAssistant({ profile }) {
   );
   const [preferredSessionMinutes, setPreferredSessionMinutes] = useState(90);
   const [restMinutes, setRestMinutes] = useState(15);
-  const [constraints, setConstraints] = useState("جمعه سبک باشد");
+  const [constraints, setConstraints] = useState("جمعه سبک‌تر باشد");
   const [catalog, setCatalog] = useState([]);
   const [courses, setCourses] = useState({});
   const [plan, setPlan] = useState(null);
@@ -52,10 +52,11 @@ export default function PlanningAssistant({ profile }) {
     const fetchCourses = async () => {
       setLoadingCatalog(true);
       setError("");
+
       try {
         const response = await fetch(`/api/planner/courses?major=${encodeURIComponent(major)}`);
         if (!response.ok) {
-          throw new Error("دریافت لیست درس‌ها ناموفق بود.");
+          throw new Error("دریافت فهرست درس‌ها با مشکل مواجه شد.");
         }
 
         const data = await response.json();
@@ -110,6 +111,7 @@ export default function PlanningAssistant({ profile }) {
   const handleGenerate = async () => {
     setGenerating(true);
     setError("");
+
     try {
       const response = await fetch("/api/planner/weekly", {
         method: "POST",
@@ -118,13 +120,14 @@ export default function PlanningAssistant({ profile }) {
       });
 
       const data = await response.json();
+
       if (!response.ok) {
-        throw new Error(data.error || "تولید برنامه ناموفق بود.");
+        throw new Error(data.error || "تولید برنامه با مشکل مواجه شد.");
       }
 
       setPlan(data);
     } catch (err) {
-      setError(err.message || "در تولید برنامه خطایی رخ داد.");
+      setError(err.message || "در فرآیند تولید برنامه خطایی رخ داد.");
     } finally {
       setGenerating(false);
     }
@@ -137,7 +140,7 @@ export default function PlanningAssistant({ profile }) {
         style={{
           maxWidth: "1100px",
           direction: "rtl",
-          fontFamily: "Vazir",
+          fontFamily: "Vazir, Tahoma, Arial, sans-serif",
         }}
       >
         <div className="d-flex flex-column gap-4">
@@ -151,11 +154,14 @@ export default function PlanningAssistant({ profile }) {
                   style={{ borderRadius: "14px", fontSize: "12px" }}
                 >
                   <RotateCcw size={14} />
-                  ویرایش ورودی‌ها
+                  ویرایش اطلاعات
                 </button>
 
                 <div>
-                  <h2 className="fw-bold d-flex align-items-center justify-content-end gap-2 mb-1" style={{ fontSize: "16px" }}>
+                  <h2
+                    className="fw-bold d-flex align-items-center justify-content-end gap-2 mb-1"
+                    style={{ fontSize: "16px" }}
+                  >
                     برنامه هفتگی شخصی‌سازی‌شده
                     <Sparkles size={16} color="#6255f5" />
                   </h2>
@@ -177,7 +183,7 @@ export default function PlanningAssistant({ profile }) {
                     fontSize: "12px",
                   }}
                 >
-                  مدل زبانی در دسترس نبود؛ برنامه با موتور داخلی منتورا ساخته شد.
+                  مدل زبانی در دسترس نبود؛ برنامه با موتور داخلی منتورا تولید شد.
                 </div>
               )}
 
@@ -190,7 +196,7 @@ export default function PlanningAssistant({ profile }) {
                 }}
               >
                 <h3 className="mb-2 fw-bold" style={{ fontSize: "13px", color: "#6255f5" }}>
-                  وضعیت دانش‌آموز
+                  وضعیت کلی دانش‌آموز
                 </h3>
                 <p className="mb-0 text-secondary" style={{ fontSize: "13px", lineHeight: "1.9" }}>
                   {plan.status}
@@ -201,7 +207,10 @@ export default function PlanningAssistant({ profile }) {
 
           <div className="card border-0 shadow-sm" style={{ borderRadius: "24px" }}>
             <div className="card-body p-4 text-end">
-              <h3 className="fw-bold d-flex align-items-center justify-content-end gap-2 mb-4" style={{ fontSize: "14px" }}>
+              <h3
+                className="fw-bold d-flex align-items-center justify-content-end gap-2 mb-4"
+                style={{ fontSize: "14px" }}
+              >
                 اولویت‌بندی درس‌ها
                 <Target size={15} color="#6255f5" />
               </h3>
@@ -230,20 +239,32 @@ export default function PlanningAssistant({ profile }) {
                       <div className="row g-2 text-center">
                         <div className="col-4">
                           <div className="bg-white border h-100" style={{ borderRadius: "14px", padding: "10px" }}>
-                            <span className="d-block text-muted" style={{ fontSize: "10px" }}>ضعف</span>
-                            <span className="fw-bold" style={{ fontSize: "13px" }}>{course.weakness}/۵</span>
+                            <span className="d-block text-muted" style={{ fontSize: "10px" }}>
+                              میزان ضعف
+                            </span>
+                            <span className="fw-bold" style={{ fontSize: "13px" }}>
+                              {course.weakness}/۵
+                            </span>
                           </div>
                         </div>
                         <div className="col-4">
                           <div className="bg-white border h-100" style={{ borderRadius: "14px", padding: "10px" }}>
-                            <span className="d-block text-muted" style={{ fontSize: "10px" }}>عقب‌افتادگی</span>
-                            <span className="fw-bold" style={{ fontSize: "13px" }}>{course.backlogHours}س</span>
+                            <span className="d-block text-muted" style={{ fontSize: "10px" }}>
+                              عقب‌افتادگی
+                            </span>
+                            <span className="fw-bold" style={{ fontSize: "13px" }}>
+                              {course.backlogHours} ساعت
+                            </span>
                           </div>
                         </div>
                         <div className="col-4">
                           <div className="bg-white border h-100" style={{ borderRadius: "14px", padding: "10px" }}>
-                            <span className="d-block text-muted" style={{ fontSize: "10px" }}>اولویت</span>
-                            <span className="fw-bold" style={{ fontSize: "13px" }}>{course.priorityScore}</span>
+                            <span className="d-block text-muted" style={{ fontSize: "10px" }}>
+                              امتیاز اولویت
+                            </span>
+                            <span className="fw-bold" style={{ fontSize: "13px" }}>
+                              {course.priorityScore}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -256,7 +277,10 @@ export default function PlanningAssistant({ profile }) {
 
           <div className="card border-0 shadow-sm" style={{ borderRadius: "24px" }}>
             <div className="card-body p-4 text-end">
-              <h3 className="fw-bold d-flex align-items-center justify-content-end gap-2 mb-4" style={{ fontSize: "14px" }}>
+              <h3
+                className="fw-bold d-flex align-items-center justify-content-end gap-2 mb-4"
+                style={{ fontSize: "14px" }}
+              >
                 برنامه روزانه هفته
                 <CalendarDays size={15} color="#6255f5" />
               </h3>
@@ -315,7 +339,7 @@ export default function PlanningAssistant({ profile }) {
                         }}
                       >
                         <span className="d-block mb-1 fw-bold" style={{ fontSize: "11px", color: "#b45309" }}>
-                          بخش شناور جبرانی
+                          بخش جبرانی شناور
                         </span>
                         <p className="mb-0" style={{ fontSize: "13px", lineHeight: "1.9", color: "#92400e" }}>
                           {day.floatingPlan}
@@ -359,14 +383,17 @@ export default function PlanningAssistant({ profile }) {
                   </span>
                 )}
 
-                <h3 className="fw-bold d-flex align-items-center justify-content-end gap-2 mb-0" style={{ fontSize: "14px" }}>
-                  متن کامل تولیدشده توسط هوش مصنوعی
+                <h3
+                  className="fw-bold d-flex align-items-center justify-content-end gap-2 mb-0"
+                  style={{ fontSize: "14px" }}
+                >
+                  متن کامل تولیدشده
                   <Sparkles size={15} color="#6255f5" />
                 </h3>
               </div>
 
               <p className="text-muted mb-3" style={{ fontSize: "11px", lineHeight: "1.9" }}>
-                این دقیقاً همان متن کاملی است که مدل تولید کرده تا ببینی چه برنامه‌ای ریخته است.
+                این بخش متن کامل برنامه تولیدشده را نمایش می‌دهد.
               </p>
 
               <pre
@@ -381,7 +408,7 @@ export default function PlanningAssistant({ profile }) {
                   padding: "16px",
                   fontSize: "13px",
                   lineHeight: "2",
-                  fontFamily: "Tahoma, Arial, sans-serif",
+                  fontFamily: "Vazir, Tahoma, Arial, sans-serif",
                   color: "#1f2937",
                 }}
               >
@@ -392,8 +419,11 @@ export default function PlanningAssistant({ profile }) {
 
           <div className="card border-0 shadow-sm" style={{ borderRadius: "24px" }}>
             <div className="card-body p-4 text-end">
-              <h3 className="fw-bold d-flex align-items-center justify-content-end gap-2 mb-3" style={{ fontSize: "14px" }}>
-                توصیه‌ها و آپدیت پروفایل
+              <h3
+                className="fw-bold d-flex align-items-center justify-content-end gap-2 mb-3"
+                style={{ fontSize: "14px" }}
+              >
+                پیشنهادها و به‌روزرسانی پروفایل
                 <ClipboardList size={15} color="#6255f5" />
               </h3>
 
@@ -428,13 +458,13 @@ export default function PlanningAssistant({ profile }) {
       style={{
         maxWidth: "1100px",
         direction: "rtl",
-        fontFamily: "Tahoma, Arial, sans-serif",
+        fontFamily: "Vazir, Tahoma, Arial, sans-serif",
       }}
     >
       <div className="d-flex flex-column gap-4">
         <div className="card border-0 shadow-sm" style={{ borderRadius: "24px" }}>
           <div className="card-body p-4 text-end">
-            <div className="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
+            <div className="d-flex justify-content-start align-items-start gap-3 flex-wrap mb-3">
               <div
                 style={{
                   background: "rgba(98,85,245,0.1)",
@@ -451,7 +481,7 @@ export default function PlanningAssistant({ profile }) {
                   دستیار برنامه‌ریزی
                 </h2>
                 <p className="text-muted mb-0" style={{ fontSize: "12px", lineHeight: "1.9" }}>
-                  اطلاعات پرسشنامه را وارد کن تا منتورا برنامه هفتگی قابل اجرا بسازد.
+                  اطلاعاتت را وارد کن تا منتورا یک برنامه هفتگی شخصی‌سازی‌شده و قابل اجرا برایت بسازد.
                 </p>
               </div>
             </div>
@@ -481,12 +511,7 @@ export default function PlanningAssistant({ profile }) {
                     value={studentName}
                     onChange={(event) => setStudentName(event.target.value)}
                     className="form-control text-end"
-                    style={{
-                      borderRadius: "14px",
-                      background: "rgba(248,250,252,0.8)",
-                      fontSize: "13px",
-                      fontWeight: 700,
-                    }}
+                    style={inputStyle}
                   />
                 </label>
               </div>
@@ -500,12 +525,7 @@ export default function PlanningAssistant({ profile }) {
                     value={examYear}
                     onChange={(event) => setExamYear(event.target.value)}
                     className="form-control text-end"
-                    style={{
-                      borderRadius: "14px",
-                      background: "rgba(248,250,252,0.8)",
-                      fontSize: "13px",
-                      fontWeight: 700,
-                    }}
+                    style={inputStyle}
                   />
                 </label>
               </div>
@@ -514,7 +534,7 @@ export default function PlanningAssistant({ profile }) {
             <div className="row g-3 mt-1">
               <div className="col-12 col-md-6">
                 <span className="d-block mb-2 fw-bold text-muted" style={{ fontSize: "11px" }}>
-                  پایه
+                  پایه تحصیلی
                 </span>
                 <div className="row g-2">
                   {["دهم", "یازدهم", "دوازدهم"].map((item) => (
@@ -523,15 +543,7 @@ export default function PlanningAssistant({ profile }) {
                         type="button"
                         onClick={() => setGrade(item)}
                         className="btn w-100"
-                        style={{
-                          borderRadius: "14px",
-                          border: grade === item ? "1px solid #6255f5" : "1px solid #e5e7eb",
-                          background: grade === item ? "rgba(98,85,245,0.06)" : "#f8fafc",
-                          color: grade === item ? "#6255f5" : "#6b7280",
-                          fontSize: "12px",
-                          fontWeight: 700,
-                          padding: "10px 8px",
-                        }}
+                        style={choiceButtonStyle(grade === item)}
                       >
                         {item}
                       </button>
@@ -554,15 +566,7 @@ export default function PlanningAssistant({ profile }) {
                           setPlan(null);
                         }}
                         className="btn w-100"
-                        style={{
-                          borderRadius: "14px",
-                          border: major === item ? "1px solid #6255f5" : "1px solid #e5e7eb",
-                          background: major === item ? "rgba(98,85,245,0.06)" : "#f8fafc",
-                          color: major === item ? "#6255f5" : "#6b7280",
-                          fontSize: "12px",
-                          fontWeight: 700,
-                          padding: "10px 8px",
-                        }}
+                        style={choiceButtonStyle(major === item)}
                       >
                         {item}
                       </button>
@@ -580,13 +584,8 @@ export default function PlanningAssistant({ profile }) {
                 <input
                   value={goal}
                   onChange={(event) => setGoal(event.target.value)}
-                  className="form-control text-end"
-                  style={{
-                    borderRadius: "14px",
-                    background: "rgba(248,250,252,0.8)",
-                    fontSize: "13px",
-                    fontWeight: 700,
-                  }}
+                  className="form-control text-end "
+                  style={inputStyle}
                 />
               </label>
             </div>
@@ -595,9 +594,12 @@ export default function PlanningAssistant({ profile }) {
 
         <div className="card border-0 shadow-sm" style={{ borderRadius: "24px" }}>
           <div className="card-body p-4 text-end">
-            <h3 className="fw-bold d-flex align-items-center justify-content-end gap-2 mb-4" style={{ fontSize: "14px" }}>
-              زمان آزاد مطالعه
+            <h3
+              className="fw-bold d-flex align-items-center justify-content-start gap-2 mb-4"
+              style={{ fontSize: "14px" }}
+            >
               <Clock size={15} color="#6255f5" />
+              زمان آزاد برای مطالعه
             </h3>
 
             <div className="row g-3 mb-4">
@@ -605,12 +607,7 @@ export default function PlanningAssistant({ profile }) {
                 <div className="col-6 col-md-3" key={day}>
                   <label
                     className="w-100"
-                    style={{
-                      border: "1px solid #f1f5f9",
-                      background: "rgba(248,250,252,0.8)",
-                      borderRadius: "16px",
-                      padding: "12px",
-                    }}
+                    style={boxStyle}
                   >
                     <span className="d-block mb-2 fw-bold text-secondary" style={{ fontSize: "11px" }}>
                       {day}
@@ -627,11 +624,7 @@ export default function PlanningAssistant({ profile }) {
                         }))
                       }
                       className="form-control text-center"
-                      style={{
-                        borderRadius: "12px",
-                        fontSize: "12px",
-                        fontWeight: 800,
-                      }}
+                      style={smallInputStyle}
                     />
                   </label>
                 </div>
@@ -649,7 +642,7 @@ export default function PlanningAssistant({ profile }) {
                   }}
                 >
                   <span className="d-block fw-bold" style={{ fontSize: "11px", color: "#059669" }}>
-                    جمع ساعت هفته
+                    مجموع ساعات هفتگی
                   </span>
                   <span className="d-block mt-2" style={{ fontSize: "28px", fontWeight: 900, color: "#047857" }}>
                     {weeklyHours} ساعت
@@ -658,17 +651,12 @@ export default function PlanningAssistant({ profile }) {
               </div>
 
               <div className="col-12 col-md-4">
-                <label
-                  className="w-100"
-                  style={{
-                    border: "1px solid #f1f5f9",
-                    background: "rgba(248,250,252,0.8)",
-                    borderRadius: "16px",
-                    padding: "12px",
-                  }}
-                >
-                  <span className="d-flex align-items-center justify-content-end gap-1 mb-2 fw-bold text-muted" style={{ fontSize: "11px" }}>
-                    طول هر پارت
+                <label className="w-100" style={boxStyle}>
+                  <span
+                    className="d-flex align-items-center justify-content-end gap-1 mb-2 fw-bold text-muted"
+                    style={{ fontSize: "11px" }}
+                  >
+                    مدت هر پارت مطالعاتی
                     <TimerReset size={12} />
                   </span>
                   <input
@@ -678,25 +666,13 @@ export default function PlanningAssistant({ profile }) {
                     value={preferredSessionMinutes}
                     onChange={(event) => setPreferredSessionMinutes(Number(event.target.value))}
                     className="form-control text-center"
-                    style={{
-                      borderRadius: "12px",
-                      fontSize: "12px",
-                      fontWeight: 800,
-                    }}
+                    style={smallInputStyle}
                   />
                 </label>
               </div>
 
               <div className="col-12 col-md-4">
-                <label
-                  className="w-100"
-                  style={{
-                    border: "1px solid #f1f5f9",
-                    background: "rgba(248,250,252,0.8)",
-                    borderRadius: "16px",
-                    padding: "12px",
-                  }}
-                >
+                <label className="w-100" style={boxStyle}>
                   <span className="d-block mb-2 fw-bold text-muted" style={{ fontSize: "11px" }}>
                     استراحت بین پارت‌ها
                   </span>
@@ -707,11 +683,7 @@ export default function PlanningAssistant({ profile }) {
                     value={restMinutes}
                     onChange={(event) => setRestMinutes(Number(event.target.value))}
                     className="form-control text-center"
-                    style={{
-                      borderRadius: "12px",
-                      fontSize: "12px",
-                      fontWeight: 800,
-                    }}
+                    style={smallInputStyle}
                   />
                 </label>
               </div>
@@ -720,19 +692,14 @@ export default function PlanningAssistant({ profile }) {
             <div className="mt-3">
               <label className="w-100">
                 <span className="d-block mb-2 fw-bold text-muted" style={{ fontSize: "11px" }}>
-                  محدودیت‌ها و زمان‌های ممنوعه
+                  محدودیت‌ها و زمان‌های غیرقابل مطالعه
                 </span>
                 <input
                   value={constraints}
                   onChange={(event) => setConstraints(event.target.value)}
-                  placeholder="مثلاً: جمعه سبک باشد، سه‌شنبه کلاس دارم"
+                  placeholder="مثلاً: جمعه سبک‌تر باشد، سه‌شنبه کلاس دارم"
                   className="form-control text-end"
-                  style={{
-                    borderRadius: "14px",
-                    background: "rgba(248,250,252,0.8)",
-                    fontSize: "13px",
-                    fontWeight: 700,
-                  }}
+                  style={inputStyle}
                 />
               </label>
             </div>
@@ -741,9 +708,12 @@ export default function PlanningAssistant({ profile }) {
 
         <div className="card border-0 shadow-sm" style={{ borderRadius: "24px" }}>
           <div className="card-body p-4 text-end">
-            <h3 className="fw-bold d-flex align-items-center justify-content-end gap-2 mb-4" style={{ fontSize: "14px" }}>
-              وضعیت دروس
+            <h3
+              className="fw-bold d-flex align-items-center justify-content-start gap-2 mb-4"
+              style={{ fontSize: "14px" }}
+            >
               <ClipboardList size={15} color="#6255f5" />
+              وضعیت درس‌ها
             </h3>
 
             {loadingCatalog ? (
@@ -758,7 +728,7 @@ export default function PlanningAssistant({ profile }) {
                   fontWeight: 700,
                 }}
               >
-                در حال دریافت درس‌ها...
+                در حال دریافت فهرست درس‌ها...
               </div>
             ) : (
               <div className="d-flex flex-column gap-3">
@@ -787,7 +757,7 @@ export default function PlanningAssistant({ profile }) {
                       <div className="row g-2">
                         <div className="col-6 col-md-4">
                           <NumberField
-                            label="ضعف"
+                            label="میزان ضعف"
                             value={values.student_weakness}
                             min={1}
                             max={5}
@@ -797,7 +767,7 @@ export default function PlanningAssistant({ profile }) {
 
                         <div className="col-6 col-md-4">
                           <NumberField
-                            label="اهمیت هدف"
+                            label="اهمیت برای هدف"
                             value={values.target_importance}
                             min={1}
                             max={5}
@@ -817,7 +787,7 @@ export default function PlanningAssistant({ profile }) {
 
                         <div className="col-6 col-md-4">
                           <NumberField
-                            label="عقب‌افتادگی"
+                            label="ساعت عقب‌افتادگی"
                             value={values.backlog_hours}
                             min={0}
                             max={100}
@@ -827,7 +797,7 @@ export default function PlanningAssistant({ profile }) {
 
                         <div className="col-6 col-md-4">
                           <NumberField
-                            label="آخرین درصد"
+                            label="آخرین درصد آزمون"
                             value={values.last_test_percent}
                             min={0}
                             max={100}
@@ -844,11 +814,7 @@ export default function PlanningAssistant({ profile }) {
                               value={values.notes}
                               onChange={(event) => updateCourse(item.name, "notes", event.target.value)}
                               className="form-control text-end"
-                              style={{
-                                borderRadius: "12px",
-                                fontSize: "12px",
-                                fontWeight: 700,
-                              }}
+                              style={smallInputStyle}
                             />
                           </label>
                         </div>
@@ -879,7 +845,7 @@ export default function PlanningAssistant({ profile }) {
                     role="status"
                     aria-hidden="true"
                   ></span>
-                  در حال تولید برنامه...
+                  در حال تولید برنامه هفتگی...
                 </>
               ) : (
                 <>
@@ -908,12 +874,38 @@ function NumberField({ label, value, min, max, onChange }) {
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
         className="form-control text-center"
-        style={{
-          borderRadius: "12px",
-          fontSize: "12px",
-          fontWeight: 800,
-        }}
+        style={smallInputStyle}
       />
     </label>
   );
 }
+
+const inputStyle = {
+  borderRadius: "14px",
+  background: "rgba(248,250,252,0.8)",
+  fontSize: "13px",
+  fontWeight: 700,
+};
+
+const smallInputStyle = {
+  borderRadius: "12px",
+  fontSize: "12px",
+  fontWeight: 700,
+};
+
+const boxStyle = {
+  border: "1px solid #f1f5f9",
+  background: "rgba(248,250,252,0.8)",
+  borderRadius: "16px",
+  padding: "12px",
+};
+
+const choiceButtonStyle = (active) => ({
+  borderRadius: "14px",
+  border: active ? "1px solid #6255f5" : "1px solid #e5e7eb",
+  background: active ? "rgba(98,85,245,0.06)" : "#f8fafc",
+  color: active ? "#6255f5" : "#6b7280",
+  fontSize: "12px",
+  fontWeight: 700,
+  padding: "10px 8px",
+});

@@ -92,7 +92,7 @@ const Onboarding = ({ onComplete }) => {
                 پایه تحصیلی شما:
               </label>
               <div className="row g-2">
-                {["یازدهم", "دوازدهم"].map((g) => (
+                {["دهم","یازدهم", "دوازدهم"].map((g) => (
                   <div className="col-6" key={g}>
                     <button
                       type="button"
