@@ -137,7 +137,7 @@ export default function PlanningAssistant({ profile }) {
         style={{
           maxWidth: "1100px",
           direction: "rtl",
-          fontFamily: "Tahoma, Arial, sans-serif",
+          fontFamily: "Vazir",
         }}
       >
         <div className="d-flex flex-column gap-4">
