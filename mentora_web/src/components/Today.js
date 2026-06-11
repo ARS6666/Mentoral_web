@@ -9,35 +9,129 @@ import {
   Clock,
 } from "lucide-react";
 
+type Profile = {
+  targetRank?: string | number;
+  major?: string;
+  name?: string;
+  grade?: string | number;
+};
+
+type Task = {
+  id: string | number;
+  title?: string;
+  duration?: string;
+  category?: string;
+  completed?: boolean;
+};
+
+type TodayProps = {
+  profile?: Profile;
+  tasks?: Task[];
+  onToggleTask?: (id: string | number, completed: boolean) => void;
+  readinessScore?: number;
+  streakCount?: number;
+  xpPoints?: number;
+  calendarDate?: string;
+};
+
 export default function Today({
   profile,
-  tasks,
+  tasks = [],
   onToggleTask,
-  readinessScore,
-  streakCount,
-  xpPoints,
+  readinessScore = 0,
+  streakCount = 0,
+  xpPoints = 0,
   calendarDate,
-}) {
-  const completedCount = tasks.filter((t) => t.completed).length;
+}: TodayProps) {
+  const safeProfile: Profile =
+    profile && typeof profile === "object" ? profile : {};
+
+  const safeTasks: Task[] = Array.isArray(tasks) ? tasks : [];
+
+  const completedCount = safeTasks.filter((t) => t?.completed).length;
+
   const currentProgress =
-    tasks.length > 0 ? Math.round((completedCount / tasks.length) * 100) : 0;
+    safeTasks.length > 0
+      ? Math.round((completedCount / safeTasks.length) * 100)
+      : 0;
+
+  const majorText = safeProfile?.major || "عمومی";
+  const targetRankText = safeProfile?.targetRank || "ثبت نشده";
 
   const quote =
-    profile.major === "ریاضی"
-      ? "موفقیت مجموعه‌ای از حساب‌های کوچک است که روز به روز حل می‌شوند. پرقدرت به تفکر و حل ادامه بده!"
-      : "سلول به سلولِ تلاشت تو رو به هدف نزدیک‌تر می‌کنه. امروز با استمرار بیشتری به سمت زیباترین رویاهات حرکت کن!";
+    majorText === "ریاضی"
+      ? "موفقیت مجموعه‌ای از مسئله‌های کوچکی است که هر روز حل می‌شوند. با تمرکز و استمرار ادامه بده؛ تو از چیزی که فکر می‌کنی قوی‌تری."
+      : majorText === "تجربی"
+      ? "سلول به سلولِ تلاشت تو را به هدفت نزدیک‌تر می‌کند. امروز با نظم، آرامش و استمرار پیش برو تا نتیجه‌ای درخشان بسازی."
+      : majorText === "انسانی"
+      ? "پیشرفت بزرگ، حاصل قدم‌های کوچک اما پیوسته است. امروز هم با تمرکز و اعتمادبه‌نفس جلو برو؛ آینده با تلاش تو ساخته می‌شود."
+      : "هر قدمی که امروز برمی‌داری، تو را به هدفت نزدیک‌تر می‌کند. با تمرکز، نظم و امید ادامه بده.";
+
+  const handleToggleTask = (task: Task) => {
+    if (!onToggleTask || task?.id === undefined || task?.id === null) return;
+    onToggleTask(task.id, !task.completed);
+  };
+
+  const getCategoryStyles = (category?: string) => {
+    switch (category) {
+      case "زیست‌شناسی":
+        return {
+          border: "1px solid #bbf7d0",
+          background: "#ecfdf5",
+          color: "#059669",
+        };
+      case "فیزیک":
+        return {
+          border: "1px solid #bfdbfe",
+          background: "#eff6ff",
+          color: "#2563eb",
+        };
+      case "شیمی":
+        return {
+          border: "1px solid #fecdd3",
+          background: "#fff1f2",
+          color: "#e11d48",
+        };
+      case "ریاضی":
+        return {
+          border: "1px solid #ddd6fe",
+          background: "#f5f3ff",
+          color: "#7c3aed",
+        };
+      case "ادبیات":
+      case "علوم و فنون":
+      case "عربی":
+      case "دینی":
+      case "فلسفه":
+      case "منطق":
+      case "تاریخ":
+      case "جغرافیا":
+        return {
+          border: "1px solid #fde68a",
+          background: "#fffbeb",
+          color: "#b45309",
+        };
+      default:
+        return {
+          border: "1px solid #e9d5ff",
+          background: "#faf5ff",
+          color: "#9333ea",
+        };
+    }
+  };
 
   return (
     <div
       className="container py-4"
       style={{
         maxWidth: "860px",
-        fontFamily: "Tahoma, Arial, sans-serif",
         direction: "rtl",
+        textAlign: "right",
+        fontFamily: "Vazir, Tahoma, Arial, sans-serif",
       }}
     >
       <div className="d-flex flex-column gap-3">
-        {/* Calendar and top header bar */}
+        {/* نوار بالایی */}
         <div
           className="d-flex justify-content-between align-items-center bg-white border shadow-sm"
           style={{
@@ -81,7 +175,7 @@ export default function Today({
           </div>
         </div>
 
-        {/* Hero card */}
+        {/* کارت اصلی */}
         <div
           className="position-relative overflow-hidden text-white"
           style={{
@@ -101,7 +195,7 @@ export default function Today({
               background: "rgba(255,255,255,0.06)",
               borderRadius: "50%",
             }}
-          ></div>
+          />
 
           <div
             style={{
@@ -113,9 +207,12 @@ export default function Today({
               background: "rgba(255,255,255,0.06)",
               borderRadius: "50%",
             }}
-          ></div>
+          />
 
-          <div className="row align-items-center position-relative" style={{ zIndex: 2 }}>
+          <div
+            className="row align-items-center position-relative"
+            style={{ zIndex: 2 }}
+          >
             <div className="col-12 col-md-8 mb-3 mb-md-0 text-center text-md-end">
               <span
                 className="d-inline-flex align-items-center gap-1"
@@ -129,7 +226,7 @@ export default function Today({
                 }}
               >
                 <Sparkles size={11} />
-                هدف رتبه {profile.targetRank}
+                هدف رتبه: {targetRankText}
               </span>
 
               <h2
@@ -139,7 +236,7 @@ export default function Today({
                   letterSpacing: "-0.3px",
                 }}
               >
-                آمادگی کنکور شما
+                وضعیت آمادگی امروز شما
               </h2>
 
               <p
@@ -150,7 +247,7 @@ export default function Today({
                   lineHeight: "1.9",
                 }}
               >
-                با تکمیل کارهای برنامه‌ریزی‌شده، شانس موفقیت خود را افزایش دهید.
+                با انجام کارهای امروز، قدم‌به‌قدم به هدف خود نزدیک‌تر می‌شوید.
               </p>
             </div>
 
@@ -167,7 +264,7 @@ export default function Today({
                 }}
               >
                 <span style={{ fontSize: "32px", fontWeight: 900 }}>
-                  {currentProgress}%
+                  {currentProgress}٪
                 </span>
                 <span
                   style={{
@@ -176,7 +273,7 @@ export default function Today({
                     color: "#ede9fe",
                   }}
                 >
-                  تکمیل امروز
+                  پیشرفت امروز
                 </span>
               </div>
             </div>
@@ -200,7 +297,7 @@ export default function Today({
                 borderRadius: "999px",
                 transition: "all 0.5s ease",
               }}
-            ></div>
+            />
           </div>
 
           <div
@@ -211,14 +308,14 @@ export default function Today({
               fontWeight: 500,
             }}
           >
-            <span>کسب تراز کل: {xpPoints} امتیاز</span>
+            <span>امتیاز امروز: {xpPoints}</span>
             <span>
-              {completedCount} از {tasks.length} کار تکمیل‌شده
+              {completedCount} از {safeTasks.length} کار انجام شده
             </span>
           </div>
         </div>
 
-        {/* Daily advice */}
+        {/* مشاوره روزانه */}
         <div
           className="text-end"
           style={{
@@ -237,7 +334,7 @@ export default function Today({
             }}
           >
             <Sparkles size={13} />
-            مشاوره روزانه منتورا برای رشته {profile.major}
+            پیشنهاد روزانه منتورا برای رشته {majorText}
           </h3>
 
           <p
@@ -253,7 +350,106 @@ export default function Today({
           </p>
         </div>
 
-        {/* Task list */}
+        {/* کارت خلاصه */}
+        <div className="row g-3">
+          <div className="col-12 col-md-4">
+            <div
+              className="bg-white h-100"
+              style={{
+                borderRadius: "20px",
+                padding: "16px",
+                border: "1px solid #eef2f7",
+                boxShadow: "0 2px 8px rgba(15,23,42,0.04)",
+              }}
+            >
+              <div
+                className="d-flex align-items-center gap-2 mb-2"
+                style={{ color: "#6255f5", fontWeight: 700, fontSize: "12px" }}
+              >
+                <Sparkles size={15} />
+                آمادگی ذهنی
+              </div>
+              <div
+                style={{
+                  fontSize: "24px",
+                  fontWeight: 900,
+                  color: "#111827",
+                }}
+              >
+                {readinessScore}
+              </div>
+              <div style={{ fontSize: "11px", color: "#6b7280" }}>
+                امتیاز آمادگی امروز
+              </div>
+            </div>
+          </div>
+
+          <div className="col-12 col-md-4">
+            <div
+              className="bg-white h-100"
+              style={{
+                borderRadius: "20px",
+                padding: "16px",
+                border: "1px solid #eef2f7",
+                boxShadow: "0 2px 8px rgba(15,23,42,0.04)",
+              }}
+            >
+              <div
+                className="d-flex align-items-center gap-2 mb-2"
+                style={{ color: "#10b981", fontWeight: 700, fontSize: "12px" }}
+              >
+                <CheckCircle2 size={15} />
+                کارهای تکمیل‌شده
+              </div>
+              <div
+                style={{
+                  fontSize: "24px",
+                  fontWeight: 900,
+                  color: "#111827",
+                }}
+              >
+                {completedCount}
+              </div>
+              <div style={{ fontSize: "11px", color: "#6b7280" }}>
+                تعداد کارهای انجام‌شده
+              </div>
+            </div>
+          </div>
+
+          <div className="col-12 col-md-4">
+            <div
+              className="bg-white h-100"
+              style={{
+                borderRadius: "20px",
+                padding: "16px",
+                border: "1px solid #eef2f7",
+                boxShadow: "0 2px 8px rgba(15,23,42,0.04)",
+              }}
+            >
+              <div
+                className="d-flex align-items-center gap-2 mb-2"
+                style={{ color: "#f59e0b", fontWeight: 700, fontSize: "12px" }}
+              >
+                <Clock size={15} />
+                کارهای باقی‌مانده
+              </div>
+              <div
+                style={{
+                  fontSize: "24px",
+                  fontWeight: 900,
+                  color: "#111827",
+                }}
+              >
+                {safeTasks.length - completedCount}
+              </div>
+              <div style={{ fontSize: "11px", color: "#6b7280" }}>
+                تعداد کارهای ناتمام
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* فهرست کارهای امروز */}
         <div>
           <h3
             className="d-flex align-items-center gap-2 mb-3 px-1"
@@ -264,10 +460,10 @@ export default function Today({
             }}
           >
             <BookOpen size={16} color="#6255f5" />
-            برنامه کارهای امروز شما
+            برنامه امروز شما
           </h3>
 
-          {tasks.length === 0 ? (
+          {safeTasks.length === 0 ? (
             <div
               className="bg-white text-center"
               style={{
@@ -278,102 +474,85 @@ export default function Today({
                 fontSize: "12px",
               }}
             >
-              هیچ برنامه‌ای یا کاری برای امروز تعریف نشده است.
+              هنوز کاری برای امروز ثبت نشده است.
             </div>
           ) : (
             <div className="d-flex flex-column gap-2">
-              {tasks.map((task) => (
-                <div
-                  key={task.id}
-                  onClick={() => onToggleTask(task.id, !task.completed)}
-                  className="d-flex justify-content-between align-items-center"
-                  style={{
-                    padding: "16px",
-                    borderRadius: "20px",
-                    cursor: "pointer",
-                    transition: "all 0.2s ease",
-                    border: task.completed
-                      ? "1px solid #bbf7d0"
-                      : "1px solid #f1f3f5",
-                    background: task.completed ? "#ecfdf5" : "#ffffff",
-                    color: task.completed ? "#6b7280" : "#1f2937",
-                    boxShadow: "0 2px 8px rgba(15,23,42,0.04)",
-                  }}
-                >
-                  <div className="d-flex align-items-center gap-3">
-                    {task.completed ? (
-                      <CheckCircle2 size={20} color="#10b981" />
-                    ) : (
-                      <Circle size={20} color="#d1d5db" />
-                    )}
+              {safeTasks.map((task, index) => {
+                const categoryStyles = getCategoryStyles(task?.category);
 
-                    <div className="d-flex flex-column text-end">
-                      <span
-                        style={{
-                          fontSize: "13px",
-                          fontWeight: 700,
-                          textDecoration: task.completed ? "line-through" : "none",
-                          color: task.completed ? "#9ca3af" : "#1f2937",
-                        }}
-                      >
-                        {task.title}
-                      </span>
-
-                      <span
-                        className="d-flex align-items-center gap-1 mt-1"
-                        style={{
-                          fontSize: "10px",
-                          color: "#9ca3af",
-                          fontWeight: 500,
-                        }}
-                      >
-                        <Clock size={11} />
-                        {task.duration}
-                      </span>
-                    </div>
-                  </div>
-
-                  <span
+                return (
+                  <div
+                    key={task?.id ?? index}
+                    onClick={() => handleToggleTask(task)}
+                    className="d-flex justify-content-between align-items-center"
                     style={{
-                      fontSize: "10px",
-                      fontWeight: 700,
-                      padding: "4px 8px",
-                      borderRadius: "8px",
-                      border:
-                        task.category === "زیست‌شناسی"
-                          ? "1px solid #bbf7d0"
-                          : task.category === "فیزیک"
-                          ? "1px solid #bfdbfe"
-                          : task.category === "شیمی"
-                          ? "1px solid #fecdd3"
-                          : "1px solid #e9d5ff",
-                      background:
-                        task.category === "زیست‌شناسی"
-                          ? "#ecfdf5"
-                          : task.category === "فیزیک"
-                          ? "#eff6ff"
-                          : task.category === "شیمی"
-                          ? "#fff1f2"
-                          : "#faf5ff",
-                      color:
-                        task.category === "زیست‌شناسی"
-                          ? "#059669"
-                          : task.category === "فیزیک"
-                          ? "#2563eb"
-                          : task.category === "شیمی"
-                          ? "#e11d48"
-                          : "#9333ea",
+                      padding: "16px",
+                      borderRadius: "20px",
+                      cursor: onToggleTask ? "pointer" : "default",
+                      transition: "all 0.2s ease",
+                      border: task?.completed
+                        ? "1px solid #bbf7d0"
+                        : "1px solid #f1f3f5",
+                      background: task?.completed ? "#ecfdf5" : "#ffffff",
+                      color: task?.completed ? "#6b7280" : "#1f2937",
+                      boxShadow: "0 2px 8px rgba(15,23,42,0.04)",
                     }}
                   >
-                    {task.category}
-                  </span>
-                </div>
-              ))}
+                    <div className="d-flex align-items-center gap-3">
+                      {task?.completed ? (
+                        <CheckCircle2 size={20} color="#10b981" />
+                      ) : (
+                        <Circle size={20} color="#d1d5db" />
+                      )}
+
+                      <div className="d-flex flex-column text-end">
+                        <span
+                          style={{
+                            fontSize: "13px",
+                            fontWeight: 700,
+                            textDecoration: task?.completed
+                              ? "line-through"
+                              : "none",
+                            color: task?.completed ? "#9ca3af" : "#1f2937",
+                          }}
+                        >
+                          {task?.title || "بدون عنوان"}
+                        </span>
+
+                        <span
+                          className="d-flex align-items-center gap-1 mt-1"
+                          style={{
+                            fontSize: "10px",
+                            color: "#9ca3af",
+                            fontWeight: 500,
+                          }}
+                        >
+                          <Clock size={11} />
+                          {task?.duration || "زمان مشخص نشده"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <span
+                      style={{
+                        fontSize: "10px",
+                        fontWeight: 700,
+                        padding: "4px 8px",
+                        borderRadius: "8px",
+                        ...categoryStyles,
+                      }}
+                    >
+                      {task?.category || "عمومی"}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
 
-        {/* Focus timer promo */}
+        {/* بخش تمرکز */}
         <div
           className="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3"
           style={{
@@ -392,7 +571,7 @@ export default function Today({
                 color: "#92400e",
               }}
             >
-              حالت تمرکز عمیق (دیپ فوکوس)
+              حالت تمرکز عمیق
             </h4>
             <p
               className="mb-0"
@@ -403,14 +582,15 @@ export default function Today({
                 fontWeight: 300,
               }}
             >
-              واحد مطالعه کوتاه ۲۵ دقیقه‌ای را با تمرکز کامل به پایان برسانید.
+              یک بازه ۲۵ دقیقه‌ای مطالعه عمیق را شروع کنید و با تمرکز کامل
+              پیش بروید.
             </p>
           </div>
 
           <button
             type="button"
             onClick={() => {
-              alert("قابلیت تایمر پومودورو عمیق در گام بعدی به منتورا اضافه خواهد شد!");
+              alert("قابلیت تایمر تمرکز به‌زودی به منتورا اضافه می‌شود.");
             }}
             className="btn text-white fw-bold"
             style={{
