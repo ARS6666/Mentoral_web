@@ -315,10 +315,11 @@ export default function Profile() {
                   </Col>
                 </Row>
 
-                <div className="mt-4">
+                <div className="mt-12 justify-content-start d-flex m-2 align-items-center">
                   <Button
                     onClick={handleSave}
                     disabled={saving}
+                    className="mt-12 justify-content-end d-flex m-2 align-items-center"
                     style={{
                       background: "#6255f5",
                       border: "none",
