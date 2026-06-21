@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Outlet, useLocation } from 'react-router-dom';
 import './App.css';
 import './index.css';
 
@@ -15,39 +15,35 @@ import Login from './components/Login';
 import FocusTimer from './components/FocusTimer';
 import Home from './components/Home';
 import LandingPage from './components/LandingPage';
-
+import { useState, useEffect } from 'react';
 import AppNavbar from './components/Navbar';
 import AppSidebar from './components/SideBar';
 import AppFooter from './components/Footer';
+import SubscriptionPlans from './components/SubscriptionPlans';
+import Subscription from './components/Subscription';
 
-function AppLayout({ children }) {
+function AppLayout() {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const location = useLocation();
+
+
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [location]);
   return (
-    <div className="Vazir" style={{ display: 'flex', direction: 'rtl' }}>
-      <AppSidebar />
+    <div style={{ display: "flex", direction: "rtl" }}>
+      <AppSidebar open={sidebarOpen} />
+
       <div style={{ flexGrow: 1 }}>
-        <AppNavbar />
-        <div className="main-content p-3">{children}</div>
+        <AppNavbar onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+
+        <div className="main-content p-3">
+          <Outlet />
+        </div>
+
         <AppFooter />
       </div>
     </div>
-  );
-}
-
-function MainAppRoutes() {
-  return (
-    <AppLayout>
-      <Routes>
-        <Route path="/home" element={<Home />} />
-        <Route path="/onboarding" element={<Onboarding />} />
-        <Route path="/tutor" element={<Tutor />} />
-        <Route path="/today" element={<Today />} />
-        <Route path="/reports" element={<Reports />} />
-        <Route path="/practice" element={<Practice />} />
-        <Route path="/planningassistant" element={<PlanningAssistant />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/focustimer" element={<FocusTimer />} />
-      </Routes>
-    </AppLayout>
   );
 }
 
@@ -55,11 +51,29 @@ function App() {
   return (
     <Router>
       <Routes>
+
+        {/* صفحات بدون layout */}
         <Route path="/" element={<LandingPage />} />
-        <Route path="/profile" element={<Profile />} />
         <Route path="/signin" element={<Signin />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/*" element={<MainAppRoutes />} />
+
+        {/* صفحات داخل داشبورد */}
+        <Route element={<AppLayout />}>
+
+          <Route path="/home" element={<Home />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="/tutor" element={<Tutor />} />
+          <Route path="/today" element={<Today />} />
+          <Route path="/reports" element={<Reports />} />
+          <Route path="/practice" element={<Practice />} />
+          <Route path="/planningassistant" element={<PlanningAssistant />} />
+          <Route path="/focustimer" element={<FocusTimer />} />
+          <Route path="/subscriptionplans" element={<SubscriptionPlans />} />
+          <Route path="/subscription" element={<Subscription />} />
+
+        </Route>
+
       </Routes>
     </Router>
   );

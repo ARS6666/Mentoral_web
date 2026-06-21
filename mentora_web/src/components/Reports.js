@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   TrendingUp,
   AlertTriangle,
@@ -7,28 +7,40 @@ import {
   Award,
 } from "lucide-react";
 
-export default function Reports({ profile }) {
-  const topics =
-    profile?.major === "ریاضی"
-      ? [
-          { name: "حد و بیوستگی", level: "خوب", color: "#10b981", percent: 85 },
-          { name: "هندسه تحلیلی", level: "نیازمند مرور", color: "#fbbf24", percent: 62 },
-          { name: "مشتق و کاربرد", level: "ضعف جدی", color: "#f43f5e", percent: 38 },
-          { name: "ماتریس و دترمینان", level: "خوب", color: "#10b981", percent: 90 },
-          { name: "فیزیک حرکت‌شناسی", level: "ضعف جدی", color: "#f43f5e", percent: 45 },
-          { name: "دینامیک و نیرو", level: "نیازمند مرور", color: "#fbbf24", percent: 55 },
-        ]
-      : [
-          { name: "زیست پیش دانشگاهی (ژنتیک)", level: "ضعف جدی", color: "#f43f5e", percent: 32 },
-          { name: "حد و بیوستگی ریاضی", level: "خوب", color: "#10b981", percent: 88 },
-          { name: "شیمی دوازدهم (الکتروشیمی)", level: "نیازمند مرور", color: "#fbbf24", percent: 58 },
-          { name: "شیمی پایه (اسید و باز)", level: "ضعف جدی", color: "#f43f5e", percent: 40 },
-          { name: "فیزیک حرکت‌شناسی", level: "خوب", color: "#10b981", percent: 82 },
-          { name: "زیست دوازدهم (گوارش)", level: "خوب", color: "#10b981", percent: 92 },
-        ];
+import { apiJson } from "../utils/api";
 
+const toFa = (value) =>
+  String(value).replace(/[0-9]/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[d]);
+
+export default function Reports() {
+  const [report, setReport] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+    const fetchReports = async () => {
+      try {
+        const { response, data } = await apiJson("/api/reports");
+        if (response.ok) {
+          if (active) setReport(data);
+        }
+      } catch (err) {
+        console.error("خطا در دریافت گزارش‌ها:", err);
+      }
+    };
+    fetchReports();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const topics = report?.topics || [];
   const primaryWeakness =
-    topics.find((t) => t.level === "ضعف جدی")?.name || "مشتق کسرها";
+    report?.primaryWeakness ||
+    topics.find((t) => t.level === "ضعف جدی")?.name ||
+    "مشتق کسرها";
+  const averageAccuracy = report?.averageAccuracy ?? 76;
+  const accuracyGrowth = report?.accuracyGrowth ?? 12;
+  const weeklyStudyHours = report?.weeklyStudyHours ?? 28;
 
   return (
     <div
@@ -82,7 +94,7 @@ export default function Reports({ profile }) {
                     marginTop: "4px",
                   }}
                 >
-                  ۷۶٪
+                  {toFa(averageAccuracy)}٪
                 </span>
                 <span
                   className="d-block"
@@ -93,7 +105,7 @@ export default function Reports({ profile }) {
                     fontWeight: 500,
                   }}
                 >
-                  ۱۲٪ رشد نسبت به هفته قبل
+                  {toFa(accuracyGrowth)}٪ رشد نسبت به هفته قبل
                 </span>
               </div>
             </div>
@@ -122,7 +134,7 @@ export default function Reports({ profile }) {
                     marginTop: "4px",
                   }}
                 >
-                  ۲۸ ساعت
+                  {toFa(weeklyStudyHours)} ساعت
                 </span>
                 <span
                   className="d-block"
