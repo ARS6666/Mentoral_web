@@ -11,6 +11,7 @@ import {
     ClipboardCheck,
     Hourglass,
     X,
+    ShoppingBasket,
 } from "lucide-react";
 
 export default function AppSidebar({ open, onClose }) {
@@ -22,7 +23,7 @@ export default function AppSidebar({ open, onClose }) {
         { key: "/practice", label: "تمرین و آزمون", icon: <BookMarked size={18} /> },
         { key: "/reports", label: "گزارش‌ها", icon: <BarChart3 size={18} /> },
         { key: "/focustimer", label: "تایمر فوکوس", icon: <Hourglass size={18} /> },
-        { key: "/profile", label: "پروفایل", icon: <UserCircle2 size={18} /> },
+        { key: "/subscriptionplans", label: "خرید یا تمدید اشتراک", icon: <ShoppingBasket size={18} /> },
         { key: "/profile", label: "پروفایل", icon: <UserCircle2 size={18} /> },
     ];
 
