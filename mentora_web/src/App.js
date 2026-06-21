@@ -21,7 +21,7 @@ import AppSidebar from './components/SideBar';
 import AppFooter from './components/Footer';
 import SubscriptionPlans from './components/SubscriptionPlans';
 import Subscription from './components/Subscription';
-
+import NotFound from './components/NotFound'
 function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
@@ -59,7 +59,7 @@ function App() {
 
         {/* صفحات داخل داشبورد */}
         <Route element={<AppLayout />}>
-
+          <Route path="*" element={<NotFound />} />
           <Route path="/home" element={<Home />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/onboarding" element={<Onboarding />} />
