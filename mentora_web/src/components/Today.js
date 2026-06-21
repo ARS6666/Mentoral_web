@@ -8,16 +8,13 @@ import {
   BookOpen,
   Clock,
 } from "lucide-react";
+import { useApp } from "../context/AppContext";
 
-export default function Today({
-  profile,
-  tasks = [],
-  onToggleTask,
-  readinessScore = 0,
-  streakCount = 0,
-  xpPoints = 0,
-  calendarDate,
-}) {
+export default function Today() {
+  const { profile, tasks, stats, toggleTask } = useApp();
+  const onToggleTask = toggleTask;
+  const { readinessScore = 0, streakCount = 0, xpPoints = 0, calendarDate, programStartsTomorrow, upcomingTasksCount } = stats || {};
+
   const safeProfile =
     profile && typeof profile === "object" ? profile : {};
 
@@ -449,7 +446,9 @@ export default function Today({
                 fontSize: "12px",
               }}
             >
-              هنوز کاری برای امروز ثبت نشده است.
+              {programStartsTomorrow
+                ? `برنامه هفتگی شما از فردا شروع می‌شود. ${upcomingTasksCount || ""} تسک برای فردا آماده است.`
+                : "هنوز کاری برای امروز ثبت نشده است. از بخش برنامه‌ریز، برنامه هفتگی بگیرید."}
             </div>
           ) : (
             <div className="d-flex flex-column gap-2">

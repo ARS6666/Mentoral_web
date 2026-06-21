@@ -13,18 +13,19 @@ import {
   X,
 } from "lucide-react";
 import "katex/dist/katex.min.css";
+import { useApp } from "../context/AppContext";
+import { apiJson, authHeaders } from "../utils/api";
 
-// Assume profile.major is available, e.g., from props or context
-// Default profile for demonstration if not provided
 const defaultProfile = {
-  major: "ریاضی", // Example major
+  major: "ریاضی",
 };
 
-export default function Tutor({
-  profile = defaultProfile, // Use defaultProfile if profile is not provided
-  initialQuestion,
-  onClearInitialQuestion,
-}) {
+export default function Tutor() {
+  const { profile: ctxProfile, bridgeQuestion, setBridgeQuestion } = useApp();
+  const profile = ctxProfile || defaultProfile;
+  const initialQuestion = bridgeQuestion;
+  const onClearInitialQuestion = () => setBridgeQuestion(null);
+
   const [messages, setMessages] = useState([
     {
       id: "welcome",
@@ -45,6 +46,47 @@ export default function Tutor({
 
   const scrollRef = useRef(null);
   const fileInputRef = useRef(null);
+  const historyLoaded = useRef(false);
+
+  const welcomeMessage = {
+    id: "welcome",
+    role: "model",
+    content:
+      `سلام قهرمان! من **منتورا** مربی هوشمند تو هستم. 🌟\n\nامروز چه سوال یا مبحثی رو برات کالبدشکافی کنیم؟ هر سوال ریاضی، فیزیک، زیست یا شیمی که برات مبهم هست رو اینجا بفرست تا با هم به ساده‌ترین روش تستی و تشریحی حلش کنیم!`,
+    timestamp: new Date().toLocaleTimeString("fa-IR", {
+      hour: "numeric",
+      minute: "numeric",
+    }),
+  };
+
+  useEffect(() => {
+    if (historyLoaded.current) return;
+    historyLoaded.current = true;
+
+    const loadHistory = async () => {
+      try {
+        const { response, data } = await apiJson("/api/tutor/history");
+        if (response.ok && Array.isArray(data.messages) && data.messages.length > 0) {
+          setMessages([
+            welcomeMessage,
+            ...data.messages.map((m) => ({
+              id: String(m.id),
+              role: m.role,
+              content: m.content,
+              timestamp: new Date(m.timestamp).toLocaleTimeString("fa-IR", {
+                hour: "numeric",
+                minute: "numeric",
+              }),
+            })),
+          ]);
+        }
+      } catch (err) {
+        console.error("خطا در بارگذاری تاریخچه چت:", err);
+      }
+    };
+    loadHistory();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Handle initial question passed as a prop
   useEffect(() => {
@@ -155,6 +197,7 @@ export default function Tutor({
       // Fetch response from the tutor API
       const res = await fetch("/api/tutor/chat", {
         method: "POST",
+        headers: authHeaders(),
         body: formData,
       });
 
