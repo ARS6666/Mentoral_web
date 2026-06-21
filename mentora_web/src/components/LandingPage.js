@@ -358,7 +358,7 @@ export default function LandingPage() {
                   fontWeight: "700",
                   boxShadow: "0 10px 30px rgba(98,85,245,0.25)",
                 }}
-                onClick={() => navigate("/home")}
+                onClick={() => navigate("/signin")}
               >
                 شروع کن
               </Button>
@@ -420,7 +420,7 @@ export default function LandingPage() {
 
             <div className="d-flex flex-wrap gap-3 mt-4">
               <Button
-                onClick={() => navigate("/home")}
+                onClick={() => navigate("/signin")}
                 style={{
                   background: "#6255f5",
                   border: "none",
@@ -637,7 +637,7 @@ export default function LandingPage() {
               </Col>
               <Col lg={4} className="text-lg-start text-center">
                 <Button
-                  onClick={() => navigate("/home")}
+                  onClick={() => navigate("/signin")}
                   style={{
                     background: "#fff",
                     color: "#6255f5",
