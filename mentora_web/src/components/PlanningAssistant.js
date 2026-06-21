@@ -9,6 +9,8 @@ import {
   TimerReset,
   Wand2,
 } from "lucide-react";
+import { useApp } from "../context/AppContext";
+import { apiJson } from "../utils/api";
 
 const DAYS = ["شنبه", "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنجشنبه", "جمعه"];
 
@@ -21,7 +23,8 @@ const defaultCourseInput = () => ({
   notes: "",
 });
 
-export default function PlanningAssistant({ profile }) {
+export default function PlanningAssistant() {
+  const { profile, refresh } = useApp();
   const [studentName, setStudentName] = useState("دانش‌آموز منتورا");
   const [grade, setGrade] = useState((profile && profile.grade) || "دوازدهم");
   const [major, setMajor] = useState((profile && profile.major) || "تجربی");
@@ -54,12 +57,11 @@ export default function PlanningAssistant({ profile }) {
       setError("");
 
       try {
-        const response = await fetch(`/api/planner/courses?major=${encodeURIComponent(major)}`);
+        const { response, data } = await apiJson(`/api/planner/courses?major=${encodeURIComponent(major)}`);
         if (!response.ok) {
-          throw new Error("دریافت فهرست درس‌ها با مشکل مواجه شد.");
+          throw new Error(data.error || "دریافت فهرست درس‌ها با مشکل مواجه شد.");
         }
 
-        const data = await response.json();
         setCatalog(data.courses || []);
         setCourses((prev) => {
           const next = {};
@@ -113,19 +115,18 @@ export default function PlanningAssistant({ profile }) {
     setError("");
 
     try {
-      const response = await fetch("/api/planner/weekly", {
+      const { response, data } = await apiJson("/api/planner/weekly", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(buildPayload()),
       });
-
-      const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.error || "تولید برنامه با مشکل مواجه شد.");
       }
 
       setPlan(data);
+      if (refresh) await refresh({ silent: true });
     } catch (err) {
       setError(err.message || "در فرآیند تولید برنامه خطایی رخ داد.");
     } finally {
@@ -537,7 +538,7 @@ export default function PlanningAssistant({ profile }) {
                   پایه تحصیلی
                 </span>
                 <div className="row g-2">
-                  {["دهم", "یازدهم", "دوازدهم"].map((item) => (
+                  {["یازدهم", "دوازدهم"].map((item) => (
                     <div className="col-4" key={item}>
                       <button
                         type="button"
