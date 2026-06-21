@@ -1,16 +1,34 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useApp } from "../context/AppContext";
 
-const Login = ({ onSubmit }) => {
+const Login = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useApp();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (onSubmit) {
-      onSubmit({ email, password, remember });
+    setLoading(true);
+    setError("");
+    try {
+      const data = await login(email, password);
+      const from = location.state?.from || "/home";
+      if (data.profile?.onboardingCompleted) {
+        navigate(from, { replace: true });
+      } else {
+        navigate("/onboarding", { replace: true });
+      }
+    } catch (err) {
+      setError(err.message || "ورود ناموفق بود.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -34,39 +52,25 @@ const Login = ({ onSubmit }) => {
         }}
       >
         <div className="text-center mb-3">
-          <h1
-            className="fw-bold mb-2"
-            style={{
-              fontSize: "30px",
-              color: "#0f172a",
-            }}
-          >
+          <h1 className="fw-bold mb-2" style={{ fontSize: "30px", color: "#0f172a" }}>
             خوش برگشتی!
           </h1>
-
-          <p
-            className="mb-0"
-            style={{
-              fontSize: "14px",
-              color: "#64748b",
-            }}
-          >
+          <p className="mb-0" style={{ fontSize: "14px", color: "#64748b" }}>
             وارد شو تا با حساب کاربری خودت ادامه بدی
           </p>
         </div>
 
+        {error && (
+          <div className="alert alert-danger border-0 small text-end py-2 mb-3" style={{ borderRadius: "12px" }}>
+            {error}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
-            <label
-              className="form-label fw-semibold d-flex align-items-center justify-content-start"
-              style={{
-                fontSize: "14px",
-                color: "#334155",
-              }}
-            >
+            <label className="form-label fw-semibold" style={{ fontSize: "14px", color: "#334155" }}>
               ایمیل
             </label>
-
             <input
               type="email"
               className="form-control"
@@ -79,16 +83,9 @@ const Login = ({ onSubmit }) => {
           </div>
 
           <div className="mb-3">
-            <label
-              className="form-label fw-semibold d-flex align-items-center justify-content-start"
-              style={{
-                fontSize: "14px",
-                color: "#334155",
-              }}
-            >
+            <label className="form-label fw-semibold" style={{ fontSize: "14px", color: "#334155" }}>
               رمز عبور
             </label>
-
             <div className="position-relative d-flex align-items-center">
               <input
                 type={showPassword ? "text" : "password"}
@@ -97,25 +94,13 @@ const Login = ({ onSubmit }) => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                style={{
-                  ...inputStyle,
-                  paddingLeft: "72px",
-                }}
+                style={{ ...inputStyle, paddingLeft: "72px" }}
               />
-
               <button
                 type="button"
                 onClick={() => setShowPassword((prev) => !prev)}
                 className="btn position-absolute start-0"
-                style={{
-                  border: "none",
-                  background: "transparent",
-                  color: "#2563eb",
-                  fontWeight: 600,
-                  fontSize: "13px",
-                  boxShadow: "none",
-                  marginLeft: "12px",
-                }}
+                style={{ border: "none", background: "transparent", color: "#2563eb", fontWeight: 600, fontSize: "13px", boxShadow: "none", marginLeft: "12px" }}
               >
                 {showPassword ? "🙊" : "🙈"}
               </button>
@@ -123,29 +108,7 @@ const Login = ({ onSubmit }) => {
           </div>
 
           <div className="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-3">
-            <button
-              type="button"
-              className="btn p-0"
-              style={{
-                border: "none",
-                background: "transparent",
-                color: "#2563eb",
-                cursor: "pointer",
-                fontSize: "12px",
-                fontWeight: 600,
-                boxShadow: "none",
-              }}
-            >
-              رمز عبورت را فراموش کرده‌ای؟
-            </button>
-
-            <label
-              className="d-flex align-items-center gap-2"
-              style={{
-                fontSize: "14px",
-                color: "#475569",
-              }}
-            >
+            <label className="d-flex align-items-center gap-2" style={{ fontSize: "14px", color: "#475569" }}>
               <span style={{ fontSize: "12px" }}>مرا به خاطر بسپار</span>
               <input
                 type="checkbox"
@@ -158,43 +121,17 @@ const Login = ({ onSubmit }) => {
 
           <button
             type="submit"
+            disabled={loading}
             className="btn w-100 fw-bold"
-            style={{
-              marginTop: "6px",
-              padding: "14px 18px",
-              borderRadius: "14px",
-              border: "none",
-              background: "#2563eb",
-              color: "#ffffff",
-              fontSize: "15px",
-            }}
+            style={{ marginTop: "6px", padding: "14px 18px", borderRadius: "14px", border: "none", background: "#2563eb", color: "#ffffff", fontSize: "15px" }}
           >
-            ورود
+            {loading ? "در حال ورود..." : "ورود"}
           </button>
         </form>
 
         <div className="mt-4 d-flex justify-content-center align-items-center gap-2 flex-wrap">
-          <span
-            style={{
-              color: "#64748b",
-              fontSize: "14px",
-            }}
-          >
-            حساب کاربری نداری؟
-          </span>
-
-          <Link
-            to="/signin"
-            className="btn p-0 fw-bold"
-            style={{
-              border: "none",
-              background: "transparent",
-              color: "#2563eb",
-              fontSize: "14px",
-              boxShadow: "none",
-              textDecoration: "none",
-            }}
-          >
+          <span style={{ color: "#64748b", fontSize: "14px" }}>حساب کاربری نداری؟</span>
+          <Link to="/signin" className="btn p-0 fw-bold" style={{ border: "none", background: "transparent", color: "#2563eb", fontSize: "14px", boxShadow: "none", textDecoration: "none" }}>
             ایجاد حساب کاربری
           </Link>
         </div>
