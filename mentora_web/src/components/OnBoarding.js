@@ -1,7 +1,12 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Sparkles, Trophy, BookOpen, Clock } from "lucide-react";
+import { useApp } from "../context/AppContext";
+import { apiJson } from "../utils/api";
 
-const Onboarding = ({ onComplete }) => {
+const Onboarding = () => {
+  const navigate = useNavigate();
+  const { completeOnboarding } = useApp();
   const [grade, setGrade] = useState("دوازدهم");
   const [major, setMajor] = useState("تجربی");
   const [targetRank, setTargetRank] = useState("زیر ۱۰۰۰");
@@ -15,18 +20,18 @@ const Onboarding = ({ onComplete }) => {
     setError("");
 
     try {
-      const response = await fetch("/api/auth/onboarding", {
+      const { response, data } = await apiJson("/api/auth/onboarding", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ grade, major, targetRank, studyHours }),
       });
 
       if (!response.ok) {
-        throw new Error("خطا در ثبت اطلاعات. لطفاً دوباره تلاش کنید.");
+        throw new Error(data.error || "خطا در ثبت اطلاعات. لطفاً دوباره تلاش کنید.");
       }
 
-      const data = await response.json();
-      if (onComplete) onComplete(data.profile, data.tasks);
+      completeOnboarding(data.profile, data.tasks);
+      navigate("/today");
     } catch (err) {
       setError(err.message || "برقراری ارتباط با سرور برقرار نشد.");
     } finally {
@@ -92,7 +97,7 @@ const Onboarding = ({ onComplete }) => {
                 پایه تحصیلی شما:
               </label>
               <div className="row g-2">
-                {["دهم","یازدهم", "دوازدهم"].map((g) => (
+                {["یازدهم", "دوازدهم"].map((g) => (
                   <div className="col-6" key={g}>
                     <button
                       type="button"
