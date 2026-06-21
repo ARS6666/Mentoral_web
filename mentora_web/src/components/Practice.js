@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { mockQuestions } from "../data/questions";
 import {
   AlertCircle,
@@ -7,8 +8,15 @@ import {
   ArrowLeft,
   Sparkles,
 } from "lucide-react";
+import { useApp } from "../context/AppContext";
 
-export default function Practice({ onAskTutor }) {
+export default function Practice() {
+  const navigate = useNavigate();
+  const { setBridgeQuestion } = useApp();
+  const onAskTutor = (questionText) => {
+    setBridgeQuestion(questionText);
+    navigate("/tutor");
+  };
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
