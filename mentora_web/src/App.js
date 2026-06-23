@@ -32,8 +32,10 @@ function AppLayout() {
   }, [location]);
   return (
     <div style={{ display: "flex", direction: "rtl" }}>
-      <AppSidebar open={sidebarOpen} />
-
+      <AppSidebar
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
       <div style={{ flexGrow: 1 }}>
         <AppNavbar onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
 
