@@ -145,7 +145,7 @@ export default function AppNavbar({ onToggleSidebar }) {
                             transition: "all 0.2s ease",
                         }}
                     >
-                        <Crown size={16} color={subscriptionDays > 0 ? "#6255f5" : "#ea580c"} />
+                        <Crown size={18} color={subscriptionDays > 0 ? "#6255f5" : "#ea580c"} />
 
                         <span
                             style={{

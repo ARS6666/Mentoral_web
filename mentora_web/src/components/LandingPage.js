@@ -505,8 +505,8 @@ export default function LandingPage() {
             filter: invert(44%) sepia(70%) saturate(1348%) hue-rotate(220deg) brightness(92%) contrast(94%);
           }
 
-          .carousel-indicators [data-bs-target] {
-            background-color: #6255f5;
+          .carousel-indicators {
+            display: none !important;
           }
 
           @media (max-width: 991.98px) {
@@ -651,7 +651,6 @@ export default function LandingPage() {
         `}
       </style>
 
-      {/* Lava Lamp Background */}
       <div className="mentora-lava-wrap">
         <div className="mentora-lava-core">
           {blobs.map((blob, index) => {
@@ -716,7 +715,6 @@ export default function LandingPage() {
 
       <div className="mentora-grain" />
 
-      {/* Top Nav */}
       <div className="landing-shell" style={{ padding: "20px 0" }}>
         <Container>
           <div className="top-nav-glass d-flex justify-content-between align-items-center  gap-3">
@@ -791,7 +789,6 @@ export default function LandingPage() {
         </Container>
       </div>
 
-      {/* Hero */}
       <Container
         className="landing-shell hero-section"
         style={{
