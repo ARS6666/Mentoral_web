@@ -659,8 +659,8 @@ export default function LandingPage() {
               index % 3 === 0
                 ? "blobFloatA"
                 : index % 3 === 1
-                ? "blobFloatB"
-                : "blobFloatC";
+                  ? "blobFloatB"
+                  : "blobFloatC";
 
             return (
               <div
@@ -690,9 +690,8 @@ export default function LandingPage() {
               background: "rgba(98,85,245,0.30)",
               left: "50%",
               top: "50%",
-              transform: `translate(calc(-50% + ${
-                smoothMouse.x * 1.8
-              }px), calc(-50% + ${smoothMouse.y * 1.8}px))`,
+              transform: `translate(calc(-50% + ${smoothMouse.x * 1.8
+                }px), calc(-50% + ${smoothMouse.y * 1.8}px))`,
               filter: "blur(14px)",
               animation: "blobFloatB 10s ease-in-out infinite",
             }}
@@ -706,9 +705,8 @@ export default function LandingPage() {
               background: "rgba(255,120,210,0.22)",
               left: "50%",
               top: "50%",
-              transform: `translate(calc(-50% + ${
-                smoothMouse.x * -1.35
-              }px), calc(-50% + ${smoothMouse.y * -1.2}px))`,
+              transform: `translate(calc(-50% + ${smoothMouse.x * -1.35
+                }px), calc(-50% + ${smoothMouse.y * -1.2}px))`,
               filter: "blur(18px)",
               animation: "blobFloatC 12s ease-in-out infinite",
             }}
@@ -1487,8 +1485,9 @@ export default function LandingPage() {
                 </p>
               </Col>
 
-              <Col lg={4} className="text-lg-center text-center d-flex justify-items-center">
+              <Col lg={4} className="text-lg-center text-center d-flex justify-content-center justify-items-center">
                 <Button
+                  className="d-flex"
                   onClick={() => navigate("/signin")}
                   style={{
                     background: "#fff",
@@ -1501,7 +1500,7 @@ export default function LandingPage() {
                   }}
                 >
                   شروع مسیر من
-                  <ArrowLeft size={18} className="me-2 d-none d-md-block" />
+                  <ArrowLeft size={18} className="me-2 d-flex" />
                 </Button>
               </Col>
             </Row>

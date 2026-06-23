@@ -52,7 +52,6 @@ function App() {
     <Router>
       <Routes>
 
-        {/* صفحات بدون layout */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/signin" element={<Signin />} />
         <Route path="/login" element={<Login />} />
