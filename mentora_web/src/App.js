@@ -22,6 +22,8 @@ import AppFooter from './components/Footer';
 import SubscriptionPlans from './components/SubscriptionPlans';
 import Subscription from './components/Subscription';
 import NotFound from './components/NotFound'
+import BlogPost from './components/blogpost';
+import BlogList from './components/Bloglist';
 function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
@@ -58,7 +60,6 @@ function App() {
         <Route path="/signin" element={<Signin />} />
         <Route path="/login" element={<Login />} />
 
-        {/* صفحات داخل داشبورد */}
         <Route element={<AppLayout />}>
           <Route path="*" element={<NotFound />} />
           <Route path="/home" element={<Home />} />
@@ -72,7 +73,8 @@ function App() {
           <Route path="/focustimer" element={<FocusTimer />} />
           <Route path="/subscriptionplans" element={<SubscriptionPlans />} />
           <Route path="/subscription" element={<Subscription />} />
-
+          <Route path="/blog" element={<BlogList />} />
+          <Route path="/blog/:slug" element={<BlogPost />} />
         </Route>
 
       </Routes>

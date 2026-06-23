@@ -5,7 +5,8 @@ export default function AppFooter() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-white mt-4" style={{ fontFamily: "Vazir, sans-serif", borderTop: "1px solid #eef2f7" }}>
+    <footer className="bg-white mt-4" style={{ fontFamily: "Vazir, sans-serif", borderTop: "1px solid #eef2f7" }} aria-label="فوتر سایت منتورا"
+    >
       <style>
         {`
           .footer-container { padding: 24px 16px; }
@@ -43,15 +44,15 @@ export default function AppFooter() {
 
       <div className="container" style={{ maxWidth: "1100px", direction: "rtl" }}>
         <div className="footer-container">
-          
+
           <div className="footer-grid">
             <div className="footer-section">
-              <div className="d-flex align-items-center gap-2 mb-2" style={{ fontSize: "18px", fontWeight: 900, color: "#6255f5" }}>
+              <h2 className="d-flex align-items-center gap-2 mb-2" style={{ fontSize: "18px", fontWeight: 900, color: "#6255f5" }}>
                 <Sparkles size={20} />
                 منتورا
-              </div>
+              </h2>
               <p style={{ fontSize: "12px", color: "#6b7280", lineHeight: "1.7", margin: 0 }}>
-                منتورا دستیار هوشمند تو در مسیر رسیدن به اهداف بزرگ است. ما یادگیری را لذت‌بخش‌تر و برنامه‌ریزی را دقیق‌تر می‌کنیم.
+                منتورا یک پلتفرم هوشمند برنامه‌ریزی درسی و مدیریت مطالعه است که به دانش‌آموزان کمک می‌کند تمرکز، برنامه‌ریزی و پیشرفت تحصیلی خود را بهتر مدیریت کنند.
               </p>
             </div>
 
@@ -62,23 +63,29 @@ export default function AppFooter() {
               <a href="/subscription" className="footer-link">ارتقای اشتراک</a>
             </div>
 
-            <div className="footer-section">
+            <div className="footer-section" aria-label="لینک‌های سریع سایت">
               <h6 style={{ fontSize: "13px", fontWeight: 800, marginBottom: "12px", color: "#111827" }}>ارتباط با ما</h6>
-              <a href="mailto:support@mentora.ir" className="footer-link d-flex align-items-center gap-2 justify-content-center justify-content-md-start">
+              <a href="mailto:support@mentora.ir" className="footer-link d-flex align-items-center gap-2 justify-content-center justify-content-md-start" aria-label="ارسال ایمیل به پشتیبانی منتورا"
+              >
                 <Mail size={14} /> پشتیبانی ایمیلی
               </a>
               <div className="d-flex gap-3 mt-2 justify-content-center justify-content-md-start">
-                <a href="#"><Instagram size={20} color="#6b7280" /></a>
-                <a href="https://t.me/EARS00hia"><Send size={20} color="#6b7280" /></a>
+                <a href="#" aria-label="اینستاگرام منتورا">
+                  <Instagram size={20} color="#6b7280" />
+                </a>
+                <a href="https://t.me/ARS00hia" aria-label="تلگرام منتورا">
+                  <Send size={20} color="#6b7280" />
+                </a>
+
               </div>
             </div>
           </div>
 
           <div className="text-center mt-4 pt-3" style={{ borderTop: "1px solid #f3f4f6", fontSize: "11px", color: "#9ca3af" }}>
-             تمامی حقوق محفوظ است © {currentYear} | ساخته شده با <Heart size={12} color="#ef4444" className="d-inline" /> برای دانش‌آموزان پرتلاش
+            تمامی حقوق محفوظ است © {currentYear} | ساخته شده با <Heart size={12} color="#ef4444" className="d-inline" /> برای دانش‌آموزان پرتلاش
           </div>
         </div>
       </div>
-    </footer>
+    </footer >
   );
 }
