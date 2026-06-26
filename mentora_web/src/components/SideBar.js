@@ -34,7 +34,7 @@ export default function AppSidebar({ open, onClose }) {
         { key: "/reports", label: "گزارش‌ها", icon: <BarChart3 size={18} /> },
         { key: "/focustimer", label: "تایمر فوکوس", icon: <Hourglass size={18} /> },
         { key: "/blog", label: "بلاگ", icon: <TextIcon size={18} /> },
-        { key: "/subscriptionplans", label: "خرید یا تمدید اشتراک", icon: <ShoppingBasket size={18} /> },
+        { key: "/subscription", label: "اشتراک", icon: <ShoppingBasket size={18} /> },
         { key: "/profile", label: "پروفایل", icon: <UserCircle2 size={18} /> },
     ];
 
@@ -72,6 +72,9 @@ export default function AppSidebar({ open, onClose }) {
             padding: var(--sidebar-padding);
             position: relative;
             transform: none;
+            position: sticky; 
+            top: 0;  
+            height: 100vh;  
           }
         }
 
@@ -115,7 +118,7 @@ export default function AppSidebar({ open, onClose }) {
             <aside
                 className={`app-sidebar ${open ? "open" : ""}`}
                 style={{
-                    "--sidebar-width": open ? "260px" : "0px",
+                    "--sidebar-width": open ? "270px" : "0px",
                     "--sidebar-padding": open ? "20px 16px" : "0px",
                     "--sidebar-border": open ? "1px solid #eef2f7" : "none",
                 }}
@@ -222,6 +225,7 @@ export default function AppSidebar({ open, onClose }) {
                                     padding: "12px",
                                     borderRadius: "12px",
                                     textDecoration: "none",
+                                    
                                     color: isActive ? "#6255f5" : "#374151",
                                     background: isActive
                                         ? "rgba(98,85,245,0.1)"
