@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
-import confetti from "canvas-confetti";
 import "katex/dist/katex.min.css";
 import {
   AlertCircle,
@@ -20,19 +19,20 @@ import {
   X,
 } from "lucide-react";
 import { useApp } from "../context/AppContext";
-import { apiJson } from "../utils/api";
+import { apiJson, resolveMediaUrl } from "../utils/api";
 
 const ALL_TOPICS = "همه مباحث";
 const MAJORS = ["تجربی", "ریاضی"];
 const FALLBACK_COUNTS = [5, 10, 15, 20, 25, 30];
 const PRACTICE_SESSION_STORAGE_KEY = "mentora_practice_session_v1";
-const PRACTICE_SESSION_VERSION = 1;
+const PRACTICE_SESSION_VERSION = 2;
 const SAVED_PHASES = ["running", "results"];
 const DEFAULT_FEATURES = {
   topics: false,
   explanations: false,
   difficulty: false,
 };
+const OPTION_LABELS = ["گزینه ۱", "گزینه ۲", "گزینه ۳", "گزینه ۴"];
 
 const toFa = (value, maximumFractionDigits = 0) => {
   const number = Number(value);
@@ -118,20 +118,6 @@ const clearPracticeSession = () => {
   window.localStorage.removeItem(PRACTICE_SESSION_STORAGE_KEY);
 };
 
-function InlineMarkdown({ children }) {
-  return (
-    <ReactMarkdown
-      remarkPlugins={[remarkMath]}
-      rehypePlugins={[rehypeKatex]}
-      components={{
-        p: ({ children: paragraphChildren }) => <span>{paragraphChildren}</span>,
-      }}
-    >
-      {children || ""}
-    </ReactMarkdown>
-  );
-}
-
 function BlockMarkdown({ children }) {
   return (
     <ReactMarkdown
@@ -174,6 +160,7 @@ export default function Practice() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [sessionLoaded, setSessionLoaded] = useState(false);
   const [showDamage, setShowDamage] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
 
   const lessonConfig = useMemo(
     () => lessons.find((item) => item.name === lesson),
@@ -183,6 +170,7 @@ export default function Practice() {
   const currentQuestion = questions[currentIndex];
   const currentAnswer = answers[currentIndex];
   const hasAnswered = currentAnswer !== null && currentAnswer !== undefined;
+  const currentIsCorrect = currentAnswer === currentQuestion?.correctAnswer;
 
   const result = useMemo(() => {
     const total = questions.length;
@@ -202,33 +190,9 @@ export default function Practice() {
   }, [answers, questions]);
 
   const fireCorrectConfetti = () => {
-    const defaults = {
-      spread: 70,
-      ticks: 120,
-      gravity: 0.95,
-      decay: 0.94,
-      startVelocity: 28,
-      scalar: 1,
-      zIndex: 9999,
-    };
-
-    confetti({
-      ...defaults,
-      particleCount: 70,
-      origin: { x: 0.2, y: 0.5 },
-    });
-
-    confetti({
-      ...defaults,
-      particleCount: 70,
-      origin: { x: 0.8, y: 0.6 },
-    });
-
-    confetti({
-      ...defaults,
-      particleCount: 45,
-      origin: { x: 0.5, y: 0.45 },
-    });
+    setShowCelebration(false);
+    window.setTimeout(() => setShowCelebration(true), 0);
+    window.setTimeout(() => setShowCelebration(false), 700);
   };
 
   const triggerWrongFlash = () => {
@@ -244,6 +208,8 @@ export default function Practice() {
     setQuestions([]);
     setAnswers([]);
     setCurrentIndex(0);
+    setShowCelebration(false);
+    setShowDamage(false);
   };
 
   useEffect(() => {
@@ -427,7 +393,8 @@ export default function Practice() {
 
   const askTutor = (question) => {
     if (!question) return;
-    setBridgeQuestion(`این سوال را مرحله‌به‌مرحله توضیح بده: "${question.questionText}"`);
+    const questionLabel = `سوال تصویری ${currentIndex + 1}`.trim();
+    setBridgeQuestion(`این سوال را مرحله‌به‌مرحله توضیح بده: "${questionLabel}"`);
     navigate("/tutor");
   };
 
@@ -454,12 +421,31 @@ export default function Practice() {
         />
       )}
 
+      {showCelebration && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background:
+              "radial-gradient(circle at 20% 35%, rgba(34, 197, 94, 0.24), transparent 18%), radial-gradient(circle at 78% 42%, rgba(99, 102, 241, 0.2), transparent 16%), radial-gradient(circle at 50% 25%, rgba(250, 204, 21, 0.22), transparent 14%)",
+            pointerEvents: "none",
+            zIndex: 9998,
+            animation: "successFlash 700ms ease-out",
+          }}
+        />
+      )}
+
       <style>
         {`
           @keyframes damageFlash {
             0% { opacity: 0; }
             20% { opacity: 1; }
             100% { opacity: 0; }
+          }
+          @keyframes successFlash {
+            0% { opacity: 0; transform: scale(0.98); }
+            20% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(1.02); }
           }
         `}
       </style>
@@ -791,11 +777,29 @@ export default function Practice() {
                   </div>
 
                   <div className="text-end fw-bold mb-3" style={{ fontSize: "15px", lineHeight: "2", color: "#111827" }}>
-                    <BlockMarkdown>{currentQuestion.questionText}</BlockMarkdown>
+                    {currentQuestion.questionImage && (
+                      <img
+                        src={resolveMediaUrl(currentQuestion.questionImage)}
+                        alt={`Question ${currentIndex + 1}`}
+                        style={{
+                          width: "100%",
+                          maxHeight: "640px",
+                          objectFit: "contain",
+                          borderRadius: "14px",
+                          border: "1px solid #e5e7eb",
+                          background: "#fff",
+                        }}
+                      />
+                    )}
+                    {!currentQuestion.questionImage && (
+                      <div style={{ color: "#991b1b", fontSize: "13px" }}>
+                        تصویر سوال برای این ردیف پیدا نشد.
+                      </div>
+                    )}
                   </div>
 
                   <div className="d-flex flex-column gap-2">
-                    {currentQuestion.options.map((option, index) => (
+                    {OPTION_LABELS.map((option, index) => (
                       <button
                         key={index}
                         type="button"
@@ -812,7 +816,7 @@ export default function Practice() {
                         }}
                       >
                         <span style={{ flex: 1, textAlign: "right", lineHeight: "1.9" }}>
-                          <InlineMarkdown>{option}</InlineMarkdown>
+                          {option}
                         </span>
                         {hasAnswered && index === currentQuestion.correctAnswer && <Check size={17} color="#16a34a" />}
                         {hasAnswered && index === currentAnswer && index !== currentQuestion.correctAnswer && (
@@ -826,9 +830,9 @@ export default function Practice() {
                     <div
                       className="mt-3"
                       style={{
-                        background: currentAnswer === currentQuestion.correctAnswer ? "#ecfdf5" : "#fff1f2",
-                        border: currentAnswer === currentQuestion.correctAnswer ? "1px solid #bbf7d0" : "1px solid #fecdd3",
-                        color: currentAnswer === currentQuestion.correctAnswer ? "#166534" : "#9f1239",
+                        background: currentIsCorrect ? "#ecfdf5" : "#fff1f2",
+                        border: currentIsCorrect ? "1px solid #bbf7d0" : "1px solid #fecdd3",
+                        color: currentIsCorrect ? "#166534" : "#9f1239",
                         borderRadius: "16px",
                         padding: "14px",
                         fontSize: "12px",
@@ -836,7 +840,7 @@ export default function Practice() {
                       }}
                     >
                       <div className="fw-bold mb-1">
-                        {currentAnswer === currentQuestion.correctAnswer ? "پاسخ درست بود." : "پاسخ انتخاب‌شده درست نبود."}
+                        {currentIsCorrect ? "پاسخ درست بود." : "پاسخ انتخاب‌شده درست نبود."}
                       </div>
                       {features.explanations && currentQuestion.explanation && (
                         <BlockMarkdown>{currentQuestion.explanation}</BlockMarkdown>

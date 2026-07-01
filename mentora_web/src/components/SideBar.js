@@ -12,10 +12,16 @@ import {
     X,
     TextIcon,
     ShoppingBasket,
-    NotebookTabs
+    NotebookTabs,
+    LifeBuoy,
+    ShieldCheck
 } from "lucide-react";
+import { useApp } from "../context/AppContext";
 
 export default function AppSidebar({ open, onClose }) {
+    const { profile } = useApp();
+    const isAdmin = Boolean(profile?.isAdmin);
+
     useEffect(() => {
         if (window.innerWidth < 992) {
             document.body.style.overflow = open ? "hidden" : "";
@@ -37,6 +43,7 @@ export default function AppSidebar({ open, onClose }) {
         { key: "/focustimer", label: "تایمر فوکوس", icon: <Hourglass size={18} /> },
         { key: "/blog", label: "بلاگ", icon: <TextIcon size={18} /> },
         { key: "/subscription", label: "اشتراک", icon: <ShoppingBasket size={18} /> },
+        ...(isAdmin ? [{ key: "/admin/console", label: "کنسول ادمین", icon: <ShieldCheck size={18} /> }] : []),
         { key: "/profile", label: "پروفایل", icon: <UserCircle2 size={18} /> },
     ];
 
