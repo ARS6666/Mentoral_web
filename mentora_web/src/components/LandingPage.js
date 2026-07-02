@@ -725,15 +725,23 @@ export default function LandingPage() {
                   width: "48px",
                   height: "48px",
                   borderRadius: "16px",
-                  background: "linear-gradient(135deg, #6255f5, #8b7bff)",
+                  border: "1px solid rgba(98,85,245,.1)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  color: "#fff",
-                  boxShadow: "0 10px 30px rgba(98,85,245,0.25)",
+                  padding: "7px"
                 }}
               >
-                <Sparkles size={22} />
+                <img
+                  src="/logo-mark.png"
+                  alt="منتورا"
+                  style={{
+                    width: "42px",
+                    height: "42px",
+                    objectFit: "contain",
+                    display: "block",
+                  }}
+                />
               </div>
 
               <div>
@@ -756,34 +764,36 @@ export default function LandingPage() {
             </div>
 
             <div className="landing-nav-actions d-flex align-items-center gap-2">
-              <Button
-                variant="light"
-                style={{
-                  borderRadius: "14px",
-                  padding: "10px 18px",
-                  border: "1px solid #e6e1ff",
-                  color: "#6255f5",
-                  fontWeight: "800",
-                  background: "rgba(255,255,255,.76)",
-                }}
-                onClick={() => navigate("/login")}
-              >
-                ورود
-              </Button>
+                <Button
+                  variant="light"
+                  style={{
+                    borderRadius: "14px",
+                    padding: "10px 18px",
+                    border: "1px solid #e6e1ff",
+                    color: "#6255f5",
+                    fontWeight: "800",
+                    background: "rgba(255,255,255,.76)",
+                    flex: "1 1 120px",
+                  }}
+                  onClick={() => navigate("/login")}
+                >
+                  ورود
+                </Button>
 
-              <Button
-                style={{
-                  borderRadius: "14px",
-                  padding: "10px 18px",
-                  background: "#6255f5",
-                  border: "none",
-                  fontWeight: "800",
-                  boxShadow: "0 10px 30px rgba(98,85,245,0.25)",
-                }}
-                onClick={() => navigate("/signin")}
-              >
-                شروع کن
-              </Button>
+                <Button
+                  style={{
+                    borderRadius: "14px",
+                    padding: "10px 18px",
+                    background: "#6255f5",
+                    border: "none",
+                    fontWeight: "800",
+                    boxShadow: "0 10px 30px rgba(98,85,245,0.25)",
+                    flex: "1 1 120px",
+                  }}
+                  onClick={() => navigate("/signin")}
+                >
+                  شروع کن
+                </Button>
             </div>
           </div>
         </Container>
@@ -1408,7 +1418,6 @@ export default function LandingPage() {
           </Col>
         </Row>
       </Container>
-      {/* Reviews CTA */}
       <Container className="landing-shell" style={{ paddingBottom: "70px" }}>
         <Card
           className="feature-card-mentora"

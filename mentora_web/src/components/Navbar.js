@@ -1,4 +1,4 @@
-import {Sparkles, LogOut, Menu, Crown } from "lucide-react";
+import { LogOut, Menu, Crown } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import NotificationDropdown from "./NotificationDropdown";
@@ -16,7 +16,7 @@ export default function AppNavbar({ onToggleSidebar }) {
     };
 
     return (
-        
+
         <nav
             className="navbar bg-white px-2 px-md-4"
             style={{
@@ -42,9 +42,20 @@ export default function AppNavbar({ onToggleSidebar }) {
                     </button>
 
                     <div className="d-flex align-items-center gap-2">
-                        <Link to="/home" className="d-flex align-items-center justify-content-center text-white"
-                            style={{ width: "38px", height: "38px", borderRadius: "12px", background: "linear-gradient(135deg, #6255f5, #4f46e5)" }}>
-                            <Sparkles size={18} />
+                        <Link to="/home" aria-label="منتورا" className="d-flex align-items-center justify-content-center"
+                            style={{
+                                width: "48px",
+                                height: "48px",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                            }}
+                        >
+                            <img
+                                src="/logo-mark.png"
+                                alt="منتورا"
+                                style={{ width: "34px", height: "34px", objectFit: "contain", display: "block" }}
+                            />
                         </Link>
                         <div className="d-flex">
                             <div style={{ fontSize: "14px", fontWeight: 800, color: "#111827" }}>منتورا</div>
@@ -52,7 +63,7 @@ export default function AppNavbar({ onToggleSidebar }) {
                     </div>
                 </div>
                 <div className="d-flex align-items-center gap-2 gap-md-3">
-            
+
                     <Link to={subscriptionDays > 0 ? "/subscription" : "/subscriptionplans"}
                         className="d-flex align-items-center gap-2 px-2 px-md-3 py-2"
                         style={{ background: subscriptionDays > 0 ? "#f5f3ff" : "#fff7ed", border: "1px solid #ddd", borderRadius: "12px", textDecoration: "none" }}>
@@ -88,9 +99,9 @@ export default function AppNavbar({ onToggleSidebar }) {
                             position: "relative",
                         }}>
                         <LogOut size={20} />
-                </button>
+                    </button>
+                </div>
             </div>
-        </div>
         </nav >
     );
 }
