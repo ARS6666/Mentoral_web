@@ -13,6 +13,9 @@ import {
   X,
   ChevronDown,
   Paperclip,
+  Plus,
+  MessageSquare,
+  Trash2,
 } from "lucide-react";
 import "katex/dist/katex.min.css";
 import { useApp } from "../context/AppContext";
@@ -27,6 +30,20 @@ const formatTime = (date = new Date()) =>
     hour: "numeric",
     minute: "numeric",
   });
+
+const formatSessionDate = (value) => {
+  if (!value) return "";
+  try {
+    return new Date(value).toLocaleDateString("fa-IR", {
+      month: "short",
+      day: "numeric",
+    });
+  } catch {
+    return "";
+  }
+};
+
+const TUTOR_REQUEST_TIMEOUT_MS = 10 * 60 * 1000;
 
 const welcomeMessageFactory = () => ({
   id: "welcome",
@@ -82,9 +99,14 @@ export default function Tutor() {
   const [input, setInput] = useState("");
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [pendingSessionIds, setPendingSessionIds] = useState([]);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showScrollButton, setShowScrollButton] = useState(false);
+  const [sessions, setSessions] = useState([]);
+  const [activeSession, setActiveSession] = useState(null);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
+  const [sessionError, setSessionError] = useState("");
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   const scrollRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -92,8 +114,166 @@ export default function Tutor() {
   const shouldStickToBottomRef = useRef(true);
   const imagePreviewRef = useRef("");
   const sentImagePreviewUrlsRef = useRef(new Set());
+  const activeSessionRef = useRef(null);
 
-  const welcomeMessage = welcomeMessageFactory();
+  const sessionKey = (sessionId) => String(sessionId || "");
+  const isSessionPending = (sessionId) =>
+    Boolean(sessionId) && pendingSessionIds.includes(sessionKey(sessionId));
+  const activeSessionIsPending = isSessionPending(activeSession?.id);
+
+  const markSessionPending = (sessionId, pending) => {
+    const key = sessionKey(sessionId);
+    if (!key) return;
+    setPendingSessionIds((prev) => {
+      if (pending) {
+        return prev.includes(key) ? prev : [...prev, key];
+      }
+      return prev.filter((item) => item !== key);
+    });
+  };
+
+  const mapServerMessage = (m) => ({
+    id: String(m.id),
+    role: m.role,
+    content: m.content || "",
+    timestamp: m.timestamp ? formatTime(new Date(m.timestamp)) : formatTime(),
+    imagePreview: m.imagePreview || m.image || "",
+    imageUrl: m.imageUrl || m.image || "",
+    sources: m.sources || [],
+    sourceCount: m.sourceCount || 0,
+  });
+
+  const sortSessions = (items) =>
+    [...(items || [])].sort(
+      (a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0)
+    );
+
+  const replaceSessionInList = (session) => {
+    if (!session) return;
+    setSessions((prev) => {
+      const withoutCurrent = prev.filter((item) => item.id !== session.id);
+      return sortSessions([session, ...withoutCurrent]);
+    });
+  };
+
+  const loadSession = async (sessionId) => {
+    if (!sessionId) return null;
+    setSessionError("");
+    try {
+      const { response, data } = await apiJson(`/api/tutor/sessions/${sessionId}`);
+      if (!response.ok) {
+        throw new Error(data.error || "بارگذاری گفتگو ناموفق بود.");
+      }
+      const loadedSession = data.session;
+      activeSessionRef.current = loadedSession;
+      setActiveSession(loadedSession);
+      setMessages([
+        welcomeMessageFactory(),
+        ...(loadedSession.messages || []).map(mapServerMessage),
+      ]);
+      replaceSessionInList(loadedSession);
+      shouldStickToBottomRef.current = true;
+      return loadedSession;
+    } catch (err) {
+      setSessionError(err instanceof Error ? err.message : "بارگذاری گفتگو ناموفق بود.");
+      return null;
+    }
+  };
+
+  const loadSessions = async ({ selectFirst = true } = {}) => {
+    setSessionsLoading(true);
+    setSessionError("");
+    try {
+      const { response, data } = await apiJson("/api/tutor/sessions");
+      if (!response.ok) {
+        throw new Error(data.error || "بارگذاری گفتگوها ناموفق بود.");
+      }
+
+      const loadedSessions = sortSessions(data.sessions || []);
+      setSessions(loadedSessions);
+
+      if (selectFirst && loadedSessions.length > 0 && !activeSession) {
+        await loadSession(loadedSessions[0].id);
+      }
+
+      if (loadedSessions.length === 0) {
+        activeSessionRef.current = null;
+        setActiveSession(null);
+        setMessages([welcomeMessageFactory()]);
+      }
+
+      return loadedSessions;
+    } catch (err) {
+      setSessionError(err instanceof Error ? err.message : "بارگذاری گفتگوها ناموفق بود.");
+      return [];
+    } finally {
+      setSessionsLoading(false);
+    }
+  };
+
+  const createSession = async (title = "") => {
+    setSessionError("");
+    const { response, data } = await apiJson("/api/tutor/sessions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title }),
+    });
+    if (!response.ok) {
+      throw new Error(data.error || "ساخت گفتگوی جدید ناموفق بود.");
+    }
+    const session = data.session;
+    activeSessionRef.current = session;
+    setActiveSession(session);
+    setMessages([welcomeMessageFactory()]);
+    replaceSessionInList(session);
+    shouldStickToBottomRef.current = true;
+    return session;
+  };
+
+  const startNewSession = async () => {
+    try {
+      await createSession();
+      setInput("");
+      clearSelectedImage();
+    } catch (err) {
+      setSessionError(err instanceof Error ? err.message : "ساخت گفتگوی جدید ناموفق بود.");
+    }
+  };
+
+  const deleteSession = async (sessionId) => {
+    if (!sessionId || isSessionPending(sessionId)) return;
+    const confirmed = window.confirm("این گفتگو حذف شود؟");
+    if (!confirmed) return;
+
+    setSessionError("");
+    try {
+      const { response, data } = await apiJson(`/api/tutor/sessions/${sessionId}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) {
+        throw new Error(data.error || "حذف گفتگو ناموفق بود.");
+      }
+
+      const remaining = sessions.filter((item) => item.id !== sessionId);
+      setSessions(remaining);
+      if (activeSession?.id === sessionId) {
+        if (remaining.length > 0) {
+          await loadSession(remaining[0].id);
+        } else {
+          activeSessionRef.current = null;
+          setActiveSession(null);
+          setMessages([welcomeMessageFactory()]);
+        }
+      }
+    } catch (err) {
+      setSessionError(err instanceof Error ? err.message : "حذف گفتگو ناموفق بود.");
+    }
+  };
+
+  const ensureActiveSession = async () => {
+    if (activeSession) return activeSession;
+    return createSession();
+  };
 
   const scrollToBottom = (smooth = true) => {
     if (!scrollRef.current) return;
@@ -113,35 +293,13 @@ export default function Tutor() {
   useEffect(() => {
     if (historyLoaded.current) return;
     historyLoaded.current = true;
-
-    const loadHistory = async () => {
-      try {
-        const { response, data } = await apiJson("/api/tutor/history");
-        if (
-          response.ok &&
-          Array.isArray(data.messages) &&
-          data.messages.length > 0
-        ) {
-          setMessages([
-            welcomeMessage,
-            ...data.messages.map((m) => ({
-              id: String(m.id),
-              role: m.role,
-              content: m.content || "",
-              timestamp: m.timestamp ? formatTime(new Date(m.timestamp)) : formatTime(),
-              imagePreview: m.imagePreview || m.image || "",
-              imageUrl: m.imageUrl || m.image || "",
-            })),
-          ]);
-        }
-      } catch (err) {
-        console.error("خطا در بارگذاری تاریخچه چت:", err);
-      }
-    };
-
-    loadHistory();
+    loadSessions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    activeSessionRef.current = activeSession;
+  }, [activeSession]);
 
   useEffect(() => {
     if (initialQuestion) {
@@ -157,7 +315,7 @@ export default function Tutor() {
     if (shouldStickToBottomRef.current) {
       scrollToBottom(false);
     }
-  }, [messages, loading]);
+  }, [messages, activeSessionIsPending]);
 
   useEffect(() => {
     imagePreviewRef.current = imagePreview;
@@ -223,6 +381,7 @@ export default function Tutor() {
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       xhr.open("POST", "/api/tutor/chat");
+      xhr.timeout = TUTOR_REQUEST_TIMEOUT_MS;
 
       const headers = authHeaders?.() || {};
       Object.entries(headers).forEach(([key, value]) => {
@@ -257,6 +416,14 @@ export default function Tutor() {
         reject(new Error("ارتباط با سرور برقرار نشد."));
       };
 
+      xhr.ontimeout = () => {
+        reject(new Error("پاسخ مربی بیش از حد طول کشید. دوباره ارسال کن یا یک گفتگوی دیگر را ادامه بده."));
+      };
+
+      xhr.onabort = () => {
+        reject(new Error("درخواست متوقف شد."));
+      };
+
       xhr.send(formData);
     });
   };
@@ -267,7 +434,18 @@ export default function Tutor() {
     const previewToSend = action ? "" : imagePreview;
 
     if (!userText && !action && !imageToSend) return;
-    if (loading) return;
+    if (activeSessionIsPending) return;
+
+    let sessionForSend = activeSession;
+    try {
+      sessionForSend = await ensureActiveSession();
+    } catch (err) {
+      setSessionError(err instanceof Error ? err.message : "ساخت گفتگو ناموفق بود.");
+      return;
+    }
+
+    const sendingSessionId = sessionForSend.id;
+    if (isSessionPending(sendingSessionId)) return;
 
     const userMsgId = `user-${Date.now()}`;
 
@@ -290,7 +468,7 @@ export default function Tutor() {
     setMessages(updatedMessages);
     setInput("");
     shouldStickToBottomRef.current = true;
-    setLoading(true);
+    markSessionPending(sendingSessionId, true);
     setUploadProgress(imageToSend ? 0 : 100);
 
     try {
@@ -304,6 +482,7 @@ export default function Tutor() {
 
       const formData = new FormData();
       formData.append("message", userText);
+      formData.append("sessionId", sessionForSend.id);
       formData.append("history", JSON.stringify(historyPayload));
 
       if (action) {
@@ -323,32 +502,62 @@ export default function Tutor() {
 
       setUploadProgress(100);
 
-      setMessages((prev) => [
-        ...prev,
-        {
+      if (data.session) {
+        replaceSessionInList(data.session);
+        if (activeSessionRef.current?.id === sendingSessionId) {
+          activeSessionRef.current = data.session;
+          setActiveSession(data.session);
+        }
+      }
+
+      if (data.userMessage && activeSessionRef.current?.id === sendingSessionId) {
+        const savedUserMessage = mapServerMessage(data.userMessage);
+        setMessages((prev) =>
+          prev.map((message) =>
+            message.id === userMsgId
+              ? {
+                ...savedUserMessage,
+                imagePreview: previewToSend || savedUserMessage.imagePreview,
+              }
+              : message
+          )
+        );
+      }
+
+      const assistantMessage = data.assistantMessage
+        ? mapServerMessage(data.assistantMessage)
+        : {
           id: `model-${Date.now()}`,
           role: "model",
           content: data.reply || "پاسخی از سرور دریافت نشد.",
           timestamp: formatTime(),
           imagePreview: data.imageUrl || data.image || "",
           imageUrl: data.imageUrl || data.image || "",
-        },
-      ]);
+        };
+
+      if (activeSessionRef.current?.id === sendingSessionId) {
+        setMessages((prev) => [
+          ...prev,
+          assistantMessage,
+        ]);
+      }
     } catch (err) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `model-error-${Date.now()}`,
-          role: "model",
-          content:
-            err instanceof Error
-              ? err.message
-              : "متاسفانه خطایی در دریافت پاسخ مربی به وجود آمد.",
-          timestamp: formatTime(),
-        },
-      ]);
+      if (activeSessionRef.current?.id === sendingSessionId) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `model-error-${Date.now()}`,
+            role: "model",
+            content:
+              err instanceof Error
+                ? err.message
+                : "متاسفانه خطایی در دریافت پاسخ مربی به وجود آمد.",
+            timestamp: formatTime(),
+          },
+        ]);
+      }
     } finally {
-      setLoading(false);
+      markSessionPending(sendingSessionId, false);
       setTimeout(() => setUploadProgress(0), 600);
     }
   };
@@ -357,8 +566,8 @@ export default function Tutor() {
     handleSendMessage("", type);
   };
 
-  const canUseActions = !loading && messages.length >= 2;
-  const canSubmit = !loading && (input.trim() || selectedImage);
+  const canUseActions = !activeSessionIsPending && messages.length >= 2;
+  const canSubmit = !activeSessionIsPending && (input.trim() || selectedImage);
 
   return (
     <div
@@ -378,6 +587,90 @@ export default function Tutor() {
         boxShadow: "0 10px 30px rgba(15, 23, 42, 0.05)",
       }}
     >
+      <style>
+        {`
+          .tutor-session-shell {
+            display: flex;
+            flex: 1;
+            min-height: 0;
+          }
+
+          .tutor-session-panel {
+            width: 280px;
+            flex-shrink: 0;
+            border-left: 1px solid #f1f2f6;
+          }
+
+          .tutor-session-list {
+            overflow-y: auto;
+          }
+
+          @media (max-width: 768px) {
+
+            .tutor-session-shell {
+              flex-direction: column;
+              position: relative;
+              flex: 1;
+              min-height: 0;
+              overflow: hidden;
+            }
+
+            .tutor-session-panel {
+              position: absolute;
+
+              top: 0;
+              bottom: 0;
+              right: 0;
+
+              width: 100% !important;
+
+              z-index: 30;
+              background: #fff;
+
+              transform: translateX(100%);
+              transition: transform .28s cubic-bezier(.4,0,.2,1);
+
+
+              display: flex;
+              flex-direction: column;
+
+              overflow: hidden;
+
+              border-left: 0;
+            }
+
+            .tutor-session-panel.open {
+              transform: translateX(0);
+            }
+
+            .tutor-session-list {
+              flex: 1;
+              min-height: 0;
+
+              overflow-y: auto;
+              overflow-x: hidden;
+
+              padding-bottom: 20px;
+
+              -webkit-overflow-scrolling: touch;
+            }
+
+            .tutor-session-item {
+              min-width: 190px;
+            }
+
+            .history-overlay {
+              position: absolute;
+              inset: 0;
+              background: rgba(0,0,0,0.25);
+              backdrop-filter: blur(2px);
+              z-index: 20;
+            }
+
+          }
+        `}
+      </style>
+
       <div
         className="bg-white d-flex align-items-center justify-content-between"
         style={{
@@ -436,6 +729,7 @@ export default function Tutor() {
         </div>
 
         <div className="d-flex align-items-center gap-2">
+
           <div
             style={{
               fontSize: "12px",
@@ -445,54 +739,506 @@ export default function Tutor() {
               borderRadius: "12px",
               fontWeight: 800,
               border: "1px solid rgba(98,85,245,0.14)",
+              whiteSpace: "nowrap",
+              backdropFilter: "blur(10px)",
             }}
           >
             رشته {profile.major || "نامشخص"}
           </div>
+
+          <button
+            type="button"
+            onClick={startNewSession}
+            disabled={sessionsLoading}
+            className="btn d-flex align-items-center justify-content-center"
+            style={{
+              width: "36px",
+              height: "36px",
+              borderRadius: "10px",
+              border: "1px solid #e5e7eb",
+              background: "#fff",
+              color: "#6255f5",
+              padding: 0,
+            }}
+            title="گفتگوی جدید"
+          >
+            <Plus size={16} />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setHistoryOpen(!historyOpen)}
+            className="btn d-flex align-items-center justify-content-center"
+            style={{
+              width: "36px",
+              height: "36px",
+              borderRadius: "10px",
+              border: "1px solid #e5e7eb",
+              background: "#fff",
+              color: "#6255f5",
+              padding: 0,
+            }}
+            title="نمایش هیستوری"
+          >
+            <MessageSquare size={16} />
+          </button>
+
         </div>
+
       </div>
 
-      <div
-        className="position-relative d-flex flex-column"
-        style={{
-          flex: 1,
-          minHeight: 0,
-          padding: "16px 16px 10px",
-        }}
-      >
-        <div
-          ref={scrollRef}
-          onScroll={handleScroll}
-          className="overflow-auto"
+      <div className="tutor-session-shell">
+        {historyOpen && (
+          <div
+            className="history-overlay"
+            onClick={() => setHistoryOpen(false)}
+          />
+        )}
+        <aside
+          className={`tutor-session-panel bg-white d-flex flex-column ${historyOpen ? "open" : ""}`}
           style={{
-            flex: 1,
+            padding: historyOpen ? "14px" : "0px",
             minHeight: 0,
-            maxHeight: "100%",
-            padding: "6px 4px 14px",
-            scrollBehavior: "smooth",
+            width: historyOpen ? "280px" : "0px",
+            overflow: "hidden",
+            transition: "width .25s ease",
+            borderLeft: historyOpen ? "1px solid #f1f2f6" : "none",
           }}
         >
-          <div className="d-flex flex-column gap-3">
-            {messages.map((m) => {
-              const isModel = m.role === "model";
-              const rawImageSrc = m.imageUrl || m.imagePreview;
-              const imageSrc = resolveMediaUrl(rawImageSrc);
+          {sessionError && (
+            <div
+              style={{
+                borderRadius: "12px",
+                background: "#fff1f2",
+                color: "#be123c",
+                border: "1px solid #ffe4e6",
+                padding: "9px 10px",
+                fontSize: "11px",
+                lineHeight: 1.8,
+              }}
+            >
+              {sessionError}
+            </div>
+          )}
 
+          <div
+            className="d-flex align-items-center justify-content-between mb-2"
+            style={{ flexShrink: 0 }}
+          >
+            <div
+              className="d-flex align-items-center gap-2"
+              style={{ color: "#374151", fontSize: "12px", fontWeight: 900 }}
+            >
+              <MessageSquare size={15} color="#6255f5" />
+              گفتگوها
+            </div>
+            <div
+              className="d-flex align-items-center gap-2">
+              <button
+                type="button"
+                onClick={() => loadSessions({ selectFirst: false })}
+                disabled={sessionsLoading}
+                className="btn d-flex align-items-center justify-content-center"
+                style={{
+                  width: "30px",
+                  height: "30px",
+                  borderRadius: "10px",
+                  border: "1px solid #eef2f7",
+                  background: "#f8fafc",
+                  color: "#6255f5",
+                  padding: 0,
+                }}
+                title="به‌روزرسانی گفتگوها"
+              >
+                <RefreshCw size={14} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setHistoryOpen(!historyOpen)}
+                disabled={sessionsLoading}
+                className="btn d-flex align-items-center justify-content-center"
+                style={{
+                  width: "30px",
+                  height: "30px",
+                  borderRadius: "10px",
+                  border: "1px solid #eef2f7",
+                  background: "#f8fafc",
+                  color: "#6255f5",
+                  padding: 0,
+                }}
+                title="بستن گفتگوها"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          </div>
+
+          <div
+            className="tutor-session-list d-flex flex-column gap-2"
+            style={{
+              minHeight: 0,
+              flex: 1,
+            }}
+          >
+            {sessionsLoading && sessions.length === 0 && (
+              <div className="text-secondary small text-center py-3">
+                در حال بارگذاری...
+              </div>
+            )}
+
+            {!sessionsLoading && sessions.length === 0 && (
+              <div
+                className="text-center"
+                style={{
+                  border: "1px dashed #d8dcf0",
+                  borderRadius: "14px",
+                  padding: "18px 12px",
+                  color: "#9ca3af",
+                  fontSize: "12px",
+                  lineHeight: 1.8,
+                }}
+              >
+                هنوز گفتگویی نداری.
+              </div>
+            )}
+
+            {sessions.map((session) => {
+              const active = activeSession?.id === session.id;
+              const pending = isSessionPending(session.id);
               return (
-                <div
-                  key={m.id}
-                  className={`d-flex gap-2 ${isModel ? "justify-content-start" : "justify-content-end"
-                    }`}
+                <button
+                  key={session.id}
+                  type="button"
+                  onClick={() => !active && loadSession(session.id)}
+                  className="tutor-session-item btn text-end"
+                  style={{
+                    borderRadius: "14px",
+                    border: active ? "1px solid rgba(98,85,245,0.35)" : "1px solid #eef2f7",
+                    background: active ? "rgba(98,85,245,0.08)" : "#f9fafb",
+                    padding: "11px",
+                    color: "#111827",
+                    boxShadow: active ? "0 8px 18px rgba(98,85,245,0.08)" : "none",
+                  }}
                 >
-                  {isModel && (
+                  <div className="d-flex align-items-start gap-2">
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div
+                        style={{
+                          fontSize: "12px",
+                          fontWeight: 900,
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {session.title || "گفتگوی جدید"}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "10px",
+                          color: "#9ca3af",
+                          marginTop: "4px",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {pending ? "در حال پاسخ..." : (session.lastMessagePreview || "آماده شروع")}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "10px",
+                          color: pending ? "#6255f5" : "#a1a1aa",
+                          marginTop: "5px",
+                        }}
+                      >
+                        {formatSessionDate(session.updatedAt)}
+                      </div>
+                    </div>
+
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        deleteSession(session.id);
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          deleteSession(session.id);
+                        }
+                      }}
+                      className="d-flex align-items-center justify-content-center"
+                      style={{
+                        width: "28px",
+                        height: "28px",
+                        borderRadius: "10px",
+                        color: "#ef4444",
+                        background: active ? "#fff" : "#fff7f7",
+                        border: "1px solid #fee2e2",
+                        flexShrink: 0,
+                      }}
+                      title="حذف گفتگو"
+                    >
+                      <Trash2 size={13} />
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </aside>
+
+        <div className="d-flex flex-column flex-grow-1" style={{ minWidth: 0, minHeight: 0 }}>
+          <div
+            className="position-relative d-flex flex-column"
+            style={{
+              flex: 1,
+              minHeight: 0,
+              padding: "16px 16px 10px",
+            }}
+          >
+            <div
+              ref={scrollRef}
+              onScroll={handleScroll}
+              className="overflow-auto"
+              style={{
+                flex: 1,
+                minHeight: 0,
+                maxHeight: "100%",
+                padding: "6px 4px 14px",
+                scrollBehavior: "smooth",
+              }}
+            >
+              <div className="d-flex flex-column gap-3">
+                {messages.map((m) => {
+                  const isModel = m.role === "model";
+                  const rawImageSrc = m.imageUrl || m.imagePreview;
+                  const imageSrc = resolveMediaUrl(rawImageSrc);
+
+                  return (
+                    <div
+                      key={m.id}
+                      className={`d-flex gap-2 ${isModel ? "justify-content-start" : "justify-content-end"
+                        }`}
+                    >
+                      {isModel && (
+                        <div
+                          className="d-flex align-items-center justify-content-center flex-shrink-0"
+                          style={{
+                            width: "34px",
+                            height: "34px",
+                            borderRadius: "12px",
+                            background:
+                              "linear-gradient(135deg, #eef2ff, #f5f3ff)",
+                            color: "#6255f5",
+                            border: "1px solid #dbe4ff",
+                            marginTop: "2px",
+                          }}
+                        >
+                          <Bot size={16} />
+                        </div>
+                      )}
+
+                      <div
+                        className="d-flex flex-column"
+                        style={{ maxWidth: "82%" }}
+                      >
+                        <div
+                          style={{
+                            borderRadius: "20px",
+                            padding: imageSrc ? "10px" : "14px 16px",
+                            fontSize: "13px",
+                            lineHeight: "1.95",
+                            textAlign: "right",
+                            whiteSpace: "pre-wrap",
+                            direction: "rtl",
+                            background: isModel
+                              ? "#ffffff"
+                              : "linear-gradient(135deg, #6255f5, #5b50e6)",
+                            color: isModel ? "#1f2937" : "#ffffff",
+                            border: isModel ? "1px solid #eef0f5" : "none",
+                            borderTopRightRadius: isModel ? "6px" : "20px",
+                            borderTopLeftRadius: isModel ? "20px" : "6px",
+                            boxShadow: isModel
+                              ? "0 6px 20px rgba(15,23,42,0.04)"
+                              : "0 8px 20px rgba(98,85,245,0.16)",
+                            fontWeight: isModel ? 400 : 500,
+                            overflow: "hidden",
+                          }}
+                        >
+                          {imageSrc && (
+                            <div style={{ marginBottom: m.content ? "10px" : "0" }}>
+                              <img
+                                src={imageSrc}
+                                alt="chat-upload"
+                                style={{
+                                  width: "100%",
+                                  maxWidth: "340px",
+                                  maxHeight: "280px",
+                                  borderRadius: "14px",
+                                  objectFit: "cover",
+                                  display: "block",
+                                  border: isModel
+                                    ? "1px solid #eef2ff"
+                                    : "1px solid rgba(255,255,255,0.25)",
+                                  background: "#f8fafc",
+                                  cursor: "pointer",
+                                }}
+                                onError={(event) => {
+                                  const fallbackSrc = resolveMediaUrl(m.imagePreview);
+                                  if (fallbackSrc && event.currentTarget.src !== fallbackSrc) {
+                                    event.currentTarget.src = fallbackSrc;
+                                  }
+                                }}
+                                onClick={(event) =>
+                                  window.open(event.currentTarget.currentSrc || event.currentTarget.src || imageSrc, "_blank")
+                                }
+                              />
+                            </div>
+                          )}
+
+                          {isModel ? (
+                            <ReactMarkdown
+                              remarkPlugins={[remarkGfm, remarkMath]}
+                              rehypePlugins={[rehypeKatex]}
+                              components={{
+                                p: ({ children }) => (
+                                  <p style={{ marginBottom: "8px", fontSize: "14px" }}>{children}</p>
+                                ),
+                                ul: ({ children }) => (
+                                  <ul
+                                    style={{
+                                      margin: "8px 0",
+                                      paddingRight: "20px",
+                                    }}
+                                  >
+                                    {children}
+                                  </ul>
+                                ),
+                                ol: ({ children }) => (
+                                  <ol
+                                    style={{
+                                      margin: "8px 0",
+                                      paddingRight: "20px",
+                                    }}
+                                  >
+                                    {children}
+                                  </ol>
+                                ),
+                                li: ({ children }) => (
+                                  <li style={{ lineHeight: "1.8" }}>{children}</li>
+                                ),
+                                strong: ({ children }) => (
+                                  <strong
+                                    style={{
+                                      fontWeight: 900,
+                                      color: "#111827",
+                                    }}
+                                  >
+                                    {children}
+                                  </strong>
+                                ),
+                                code: ({ inline, children }) =>
+                                  inline ? (
+                                    <code
+                                      style={{
+                                        borderRadius: "6px",
+                                        background: "#f3f4f6",
+                                        padding: "2px 6px",
+                                        fontSize: "12px",
+                                        color: "#1f2937",
+                                      }}
+                                    >
+                                      {children}
+                                    </code>
+                                  ) : (
+                                    <pre
+                                      style={{
+                                        background: "#0f172a",
+                                        color: "#e5e7eb",
+                                        padding: "12px",
+                                        borderRadius: "12px",
+                                        overflowX: "auto",
+                                        margin: "10px 0",
+                                        direction: "ltr",
+                                        textAlign: "left",
+                                      }}
+                                    >
+                                      <code>{children}</code>
+                                    </pre>
+                                  ),
+                                div: ({ className, children }) => (
+                                  <div
+                                    className={className}
+                                    style={
+                                      className === "math math-display"
+                                        ? {
+                                          margin: "12px 0",
+                                          overflowX: "auto",
+                                          padding: "4px 0",
+                                        }
+                                        : {}
+                                    }
+                                  >
+                                    {children}
+                                  </div>
+                                ),
+                              }}
+                            >
+                              {m.content}
+                            </ReactMarkdown>
+                          ) : (
+                            <div>{m.content}</div>
+                          )}
+                        </div>
+
+                        <span
+                          style={{
+                            fontSize: "10px",
+                            color: "#9ca3af",
+                            marginTop: "5px",
+                            padding: "0 6px",
+                            alignSelf: isModel ? "flex-start" : "flex-end",
+                            fontWeight: 400,
+                          }}
+                        >
+                          {m.timestamp}
+                        </span>
+                      </div>
+
+                      {!isModel && (
+                        <div
+                          className="d-flex align-items-center justify-content-center flex-shrink-0"
+                          style={{
+                            width: "34px",
+                            height: "34px",
+                            borderRadius: "12px",
+                            backgroundColor: "#f8fafc",
+                            color: "#4b5563",
+                            border: "1px solid #e5e7eb",
+                            marginTop: "2px",
+                          }}
+                        >
+                          <User size={16} />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {activeSessionIsPending && (
+                  <div className="d-flex gap-2 justify-content-start">
                     <div
                       className="d-flex align-items-center justify-content-center flex-shrink-0"
                       style={{
                         width: "34px",
                         height: "34px",
                         borderRadius: "12px",
-                        background:
-                          "linear-gradient(135deg, #eef2ff, #f5f3ff)",
+                        background: "linear-gradient(135deg, #eef2ff, #f5f3ff)",
                         color: "#6255f5",
                         border: "1px solid #dbe4ff",
                         marginTop: "2px",
@@ -500,521 +1246,326 @@ export default function Tutor() {
                     >
                       <Bot size={16} />
                     </div>
-                  )}
 
-                  <div
-                    className="d-flex flex-column"
-                    style={{ maxWidth: "82%" }}
-                  >
                     <div
-                      style={{
-                        borderRadius: "20px",
-                        padding: imageSrc ? "10px" : "14px 16px",
-                        fontSize: "13px",
-                        lineHeight: "1.95",
-                        textAlign: "right",
-                        whiteSpace: "pre-wrap",
-                        direction: "rtl",
-                        background: isModel
-                          ? "#ffffff"
-                          : "linear-gradient(135deg, #6255f5, #5b50e6)",
-                        color: isModel ? "#1f2937" : "#ffffff",
-                        border: isModel ? "1px solid #eef0f5" : "none",
-                        borderTopRightRadius: isModel ? "6px" : "20px",
-                        borderTopLeftRadius: isModel ? "20px" : "6px",
-                        boxShadow: isModel
-                          ? "0 6px 20px rgba(15,23,42,0.04)"
-                          : "0 8px 20px rgba(98,85,245,0.16)",
-                        fontWeight: isModel ? 400 : 500,
-                        overflow: "hidden",
-                      }}
-                    >
-                      {imageSrc && (
-                        <div style={{ marginBottom: m.content ? "10px" : "0" }}>
-                          <img
-                            src={imageSrc}
-                            alt="chat-upload"
-                            style={{
-                              width: "100%",
-                              maxWidth: "340px",
-                              maxHeight: "280px",
-                              borderRadius: "14px",
-                              objectFit: "cover",
-                              display: "block",
-                              border: isModel
-                                ? "1px solid #eef2ff"
-                                : "1px solid rgba(255,255,255,0.25)",
-                              background: "#f8fafc",
-                              cursor: "pointer",
-                            }}
-                            onClick={() => window.open(imageSrc, "_blank")}
-                          />
-                        </div>
-                      )}
-
-                      {isModel ? (
-                        <ReactMarkdown
-                          remarkPlugins={[remarkGfm, remarkMath]}
-                          rehypePlugins={[rehypeKatex]}
-                          components={{
-                            p: ({ children }) => (
-                              <p style={{ marginBottom: "8px", fontSize: "14px" }}>{children}</p>
-                            ),
-                            ul: ({ children }) => (
-                              <ul
-                                style={{
-                                  margin: "8px 0",
-                                  paddingRight: "20px",
-                                }}
-                              >
-                                {children}
-                              </ul>
-                            ),
-                            ol: ({ children }) => (
-                              <ol
-                                style={{
-                                  margin: "8px 0",
-                                  paddingRight: "20px",
-                                }}
-                              >
-                                {children}
-                              </ol>
-                            ),
-                            li: ({ children }) => (
-                              <li style={{ lineHeight: "1.8" }}>{children}</li>
-                            ),
-                            strong: ({ children }) => (
-                              <strong
-                                style={{
-                                  fontWeight: 900,
-                                  color: "#111827",
-                                }}
-                              >
-                                {children}
-                              </strong>
-                            ),
-                            code: ({ inline, children }) =>
-                              inline ? (
-                                <code
-                                  style={{
-                                    borderRadius: "6px",
-                                    background: "#f3f4f6",
-                                    padding: "2px 6px",
-                                    fontSize: "12px",
-                                    color: "#1f2937",
-                                  }}
-                                >
-                                  {children}
-                                </code>
-                              ) : (
-                                <pre
-                                  style={{
-                                    background: "#0f172a",
-                                    color: "#e5e7eb",
-                                    padding: "12px",
-                                    borderRadius: "12px",
-                                    overflowX: "auto",
-                                    margin: "10px 0",
-                                    direction: "ltr",
-                                    textAlign: "left",
-                                  }}
-                                >
-                                  <code>{children}</code>
-                                </pre>
-                              ),
-                            div: ({ className, children }) => (
-                              <div
-                                className={className}
-                                style={
-                                  className === "math math-display"
-                                    ? {
-                                      margin: "12px 0",
-                                      overflowX: "auto",
-                                      padding: "4px 0",
-                                    }
-                                    : {}
-                                }
-                              >
-                                {children}
-                              </div>
-                            ),
-                          }}
-                        >
-                          {m.content}
-                        </ReactMarkdown>
-                      ) : (
-                        <div>{m.content}</div>
-                      )}
-                    </div>
-
-                    <span
-                      style={{
-                        fontSize: "10px",
-                        color: "#9ca3af",
-                        marginTop: "5px",
-                        padding: "0 6px",
-                        alignSelf: isModel ? "flex-start" : "flex-end",
-                        fontWeight: 400,
-                      }}
-                    >
-                      {m.timestamp}
-                    </span>
-                  </div>
-
-                  {!isModel && (
-                    <div
-                      className="d-flex align-items-center justify-content-center flex-shrink-0"
-                      style={{
-                        width: "34px",
-                        height: "34px",
-                        borderRadius: "12px",
-                        backgroundColor: "#f8fafc",
-                        color: "#4b5563",
-                        border: "1px solid #e5e7eb",
-                        marginTop: "2px",
-                      }}
-                    >
-                      <User size={16} />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-
-            {loading && (
-              <div className="d-flex gap-2 justify-content-start">
-                <div
-                  className="d-flex align-items-center justify-content-center flex-shrink-0"
-                  style={{
-                    width: "34px",
-                    height: "34px",
-                    borderRadius: "12px",
-                    background: "linear-gradient(135deg, #eef2ff, #f5f3ff)",
-                    color: "#6255f5",
-                    border: "1px solid #dbe4ff",
-                    marginTop: "2px",
-                  }}
-                >
-                  <Bot size={16} />
-                </div>
-
-                <div
-                  className="d-flex flex-column"
-                  style={{ maxWidth: "82%" }}
-                >
-                  <div
-                    className="bg-white"
-                    style={{
-                      borderRadius: "20px",
-                      borderTopRightRadius: "6px",
-                      border: "1px solid #eef0f5",
-                      padding: "14px 16px",
-                      boxShadow: "0 6px 20px rgba(15,23,42,0.04)",
-                      minWidth: "74px",
-                    }}
-                  >
-                    <TypingDots />
-                  </div>
-
-                  {uploadProgress > 0 && uploadProgress < 100 && (
-                    <div
-                      style={{
-                        marginTop: "8px",
-                        width: "180px",
-                        background: "#eceffd",
-                        borderRadius: "999px",
-                        overflow: "hidden",
-                        border: "1px solid #dde3ff",
-                      }}
+                      className="d-flex flex-column"
+                      style={{ maxWidth: "82%" }}
                     >
                       <div
+                        className="bg-white"
                         style={{
-                          width: `${uploadProgress}%`,
-                          height: "7px",
-                          background:
-                            "linear-gradient(90deg, #6255f5 0%, #7c73ff 100%)",
-                          transition: "width 0.2s ease",
+                          borderRadius: "20px",
+                          borderTopRightRadius: "6px",
+                          border: "1px solid #eef0f5",
+                          padding: "14px 16px",
+                          boxShadow: "0 6px 20px rgba(15,23,42,0.04)",
+                          minWidth: "74px",
                         }}
-                      />
+                      >
+                        <TypingDots />
+                      </div>
+
+                      {uploadProgress > 0 && uploadProgress < 100 && (
+                        <div
+                          style={{
+                            marginTop: "8px",
+                            width: "180px",
+                            background: "#eceffd",
+                            borderRadius: "999px",
+                            overflow: "hidden",
+                            border: "1px solid #dde3ff",
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: `${uploadProgress}%`,
+                              height: "7px",
+                              background:
+                                "linear-gradient(90deg, #6255f5 0%, #7c73ff 100%)",
+                              transition: "width 0.2s ease",
+                            }}
+                          />
+                          <div
+                            style={{
+                              fontSize: "10px",
+                              color: "#6255f5",
+                              fontWeight: 700,
+                              padding: "6px 8px",
+                              background: "#f8f9ff",
+                            }}
+                          >
+                            در حال آپلود تصویر... {uploadProgress}٪
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {showScrollButton && (
+              <button
+                type="button"
+                onClick={() => {
+                  shouldStickToBottomRef.current = true;
+                  scrollToBottom(true);
+                }}
+                className="btn d-flex align-items-center justify-content-center"
+                style={{
+                  position: "absolute",
+                  left: "18px",
+                  bottom: "18px",
+                  width: "42px",
+                  height: "42px",
+                  borderRadius: "50%",
+                  border: "1px solid #e5e7eb",
+                  background: "#ffffff",
+                  color: "#6255f5",
+                  boxShadow: "0 8px 20px rgba(15,23,42,0.10)",
+                  zIndex: 5,
+                }}
+                title="برو به آخر چت"
+              >
+                <ChevronDown size={20} />
+              </button>
+            )}
+          </div>
+
+          <div
+            style={{
+              background:
+                "linear-gradient(to top, #fcfbf9, rgba(252,251,249,0.98), rgba(252,251,249,0.80))",
+              padding: "14px 16px 16px",
+              borderTop: "1px solid #f3f4f6",
+              flexShrink: 0,
+            }}
+          >
+            <div className="d-flex flex-column gap-3">
+              {imagePreview && (
+                <div
+                  className="bg-white"
+                  style={{
+                    borderRadius: "18px",
+                    border: "1px solid #e1e6ff",
+                    padding: "10px",
+                    boxShadow: "0 4px 14px rgba(15,23,42,0.04)",
+                  }}
+                >
+                  <div className="d-flex align-items-center gap-3">
+                    <img
+                      src={imagePreview}
+                      alt="Selected question"
+                      style={{
+                        width: "72px",
+                        height: "72px",
+                        borderRadius: "14px",
+                        objectFit: "cover",
+                        border: "1px solid #f3f4f6",
+                        flexShrink: 0,
+                      }}
+                    />
+
+                    <div className="flex-grow-1 text-end" style={{ minWidth: 0 }}>
+                      <div
+                        style={{
+                          fontSize: "12px",
+                          fontWeight: 800,
+                          color: "#374151",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          marginBottom: "4px",
+                        }}
+                      >
+                        {selectedImage?.name || "نام فایل"}
+                      </div>
+
                       <div
                         style={{
                           fontSize: "10px",
-                          color: "#6255f5",
-                          fontWeight: 700,
-                          padding: "6px 8px",
-                          background: "#f8f9ff",
+                          color: "#9ca3af",
+                          marginBottom: "8px",
                         }}
                       >
-                        در حال آپلود تصویر... {uploadProgress}٪
+                        تصویر همراه سوال شما ارسال می‌شود
+                      </div>
+
+                      <div
+                        style={{
+                          height: "7px",
+                          borderRadius: "999px",
+                          background: "#eef2ff",
+                          overflow: "hidden",
+                          border: "1px solid #e1e7ff",
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: `${uploadProgress}%`,
+                            height: "100%",
+                            background:
+                              "linear-gradient(90deg, #6255f5 0%, #7c73ff 100%)",
+                            transition: "width 0.2s ease",
+                          }}
+                        />
+                      </div>
+
+                      <div
+                        style={{
+                          marginTop: "6px",
+                          fontSize: "10px",
+                          fontWeight: 700,
+                          color: "#6255f5",
+                        }}
+                      >
+                        {uploadProgress > 0
+                          ? `پیشرفت آپلود: ${uploadProgress}٪`
+                          : "آماده برای ارسال"}
                       </div>
                     </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
 
-        {showScrollButton && (
-          <button
-            type="button"
-            onClick={() => {
-              shouldStickToBottomRef.current = true;
-              scrollToBottom(true);
-            }}
-            className="btn d-flex align-items-center justify-content-center"
-            style={{
-              position: "absolute",
-              left: "18px",
-              bottom: "18px",
-              width: "42px",
-              height: "42px",
-              borderRadius: "50%",
-              border: "1px solid #e5e7eb",
-              background: "#ffffff",
-              color: "#6255f5",
-              boxShadow: "0 8px 20px rgba(15,23,42,0.10)",
-              zIndex: 5,
-            }}
-            title="برو به آخر چت"
-          >
-            <ChevronDown size={20} />
-          </button>
-        )}
-      </div>
-
-      <div
-        style={{
-          background:
-            "linear-gradient(to top, #fcfbf9, rgba(252,251,249,0.98), rgba(252,251,249,0.80))",
-          padding: "14px 16px 16px",
-          borderTop: "1px solid #f3f4f6",
-          flexShrink: 0,
-        }}
-      >
-        <div className="d-flex flex-column gap-3">
-          {imagePreview && (
-            <div
-              className="bg-white"
-              style={{
-                borderRadius: "18px",
-                border: "1px solid #e1e6ff",
-                padding: "10px",
-                boxShadow: "0 4px 14px rgba(15,23,42,0.04)",
-              }}
-            >
-              <div className="d-flex align-items-center gap-3">
-                <img
-                  src={imagePreview}
-                  alt="Selected question"
-                  style={{
-                    width: "72px",
-                    height: "72px",
-                    borderRadius: "14px",
-                    objectFit: "cover",
-                    border: "1px solid #f3f4f6",
-                    flexShrink: 0,
-                  }}
-                />
-
-                <div className="flex-grow-1 text-end" style={{ minWidth: 0 }}>
-                  <div
-                    style={{
-                      fontSize: "12px",
-                      fontWeight: 800,
-                      color: "#374151",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      marginBottom: "4px",
-                    }}
-                  >
-                    {selectedImage?.name || "نام فایل"}
-                  </div>
-
-                  <div
-                    style={{
-                      fontSize: "10px",
-                      color: "#9ca3af",
-                      marginBottom: "8px",
-                    }}
-                  >
-                    تصویر همراه سوال شما ارسال می‌شود
-                  </div>
-
-                  <div
-                    style={{
-                      height: "7px",
-                      borderRadius: "999px",
-                      background: "#eef2ff",
-                      overflow: "hidden",
-                      border: "1px solid #e1e7ff",
-                    }}
-                  >
-                    <div
+                    <button
+                      type="button"
+                      onClick={clearSelectedImage}
+                      className="btn"
                       style={{
-                        width: `${uploadProgress}%`,
-                        height: "100%",
-                        background:
-                          "linear-gradient(90deg, #6255f5 0%, #7c73ff 100%)",
-                        transition: "width 0.2s ease",
+                        borderRadius: "12px",
+                        border: "1px solid #f1f2f6",
+                        padding: "8px",
+                        color: "#9ca3af",
+                        background: "#fff",
                       }}
-                    />
-                  </div>
-
-                  <div
-                    style={{
-                      marginTop: "6px",
-                      fontSize: "10px",
-                      fontWeight: 700,
-                      color: "#6255f5",
-                    }}
-                  >
-                    {uploadProgress > 0
-                      ? `پیشرفت آپلود: ${uploadProgress}٪`
-                      : "آماده برای ارسال"}
+                    >
+                      <X size={14} />
+                    </button>
                   </div>
                 </div>
+              )}
+
+              <div className="d-flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleAction("simpler")}
+                  disabled={!canUseActions}
+                  className="btn flex-fill d-flex align-items-center justify-content-center gap-1"
+                  style={{
+                    background: canUseActions ? "#fffbeb" : "#f9fafb",
+                    color: canUseActions ? "#b45309" : "#9ca3af",
+                    fontWeight: 800,
+                    fontSize: "12px",
+                    padding: "11px 12px",
+                    border: "1px solid #fde68a",
+                    borderRadius: "14px",
+                  }}
+                >
+                  <HelpCircle size={14} />
+                  ساده‌تر بگو
+                </button>
 
                 <button
                   type="button"
-                  onClick={clearSelectedImage}
-                  className="btn"
+                  onClick={() => handleAction("alternative")}
+                  disabled={!canUseActions}
+                  className="btn flex-fill d-flex align-items-center justify-content-center gap-1"
                   style={{
-                    borderRadius: "12px",
-                    border: "1px solid #f1f2f6",
-                    padding: "8px",
-                    color: "#9ca3af",
-                    background: "#fff",
+                    background: canUseActions ? "#eef2ff" : "#f9fafb",
+                    color: canUseActions ? "#4338ca" : "#9ca3af",
+                    fontWeight: 800,
+                    fontSize: "12px",
+                    padding: "11px 12px",
+                    border: "1px solid #c7d2fe",
+                    borderRadius: "14px",
                   }}
                 >
-                  <X size={14} />
+                  <RefreshCw size={14} />
+                  روش تست‌زنی دیگر
                 </button>
               </div>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSendMessage(input);
+                }}
+                className="d-flex gap-2 align-items-center"
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  style={{ display: "none" }}
+                />
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    fileInputRef.current && fileInputRef.current.click()
+                  }
+                  disabled={activeSessionIsPending}
+                  className="btn d-flex align-items-center justify-content-center"
+                  style={{
+                    width: "46px",
+                    height: "46px",
+                    borderRadius: "16px",
+                    border: selectedImage
+                      ? "1px solid #6255f5"
+                      : "1px solid #e5e7eb",
+                    background: selectedImage
+                      ? "rgba(98,85,245,0.08)"
+                      : "#ffffff",
+                    color: selectedImage ? "#6255f5" : "#6b7280",
+                    flexShrink: 0,
+                  }}
+                  title="ارسال تصویر"
+                >
+                  {selectedImage ? <Paperclip size={17} /> : <ImageIcon size={17} />}
+                </button>
+
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  disabled={activeSessionIsPending}
+                  placeholder="سوال درسی جدید خود را بپرسید..."
+                  className="form-control"
+                  style={{
+                    borderRadius: "16px",
+                    border: "1px solid #e5e7eb",
+                    background: "#ffffff",
+                    padding: "12px 16px",
+                    fontSize: "13px",
+                    textAlign: "right",
+                    color: "#1f2937",
+                    minHeight: "46px",
+                    boxShadow: "none",
+                  }}
+                />
+
+                <button
+                  type="submit"
+                  disabled={!canSubmit}
+                  className="btn d-flex align-items-center justify-content-center"
+                  style={{
+                    background: canSubmit ? "#6255f5" : "#c7c9d1",
+                    borderRadius: "16px",
+                    border: "none",
+                    width: "46px",
+                    height: "46px",
+                    color: "white",
+                    flexShrink: 0,
+                    boxShadow: canSubmit
+                      ? "0 8px 18px rgba(98,85,245,0.24)"
+                      : "none",
+                  }}
+                  title="ارسال"
+                >
+                  <Send size={18} style={{ transform: "scaleX(-1)" }} />
+                </button>
+              </form>
             </div>
-          )}
-
-          <div className="d-flex gap-2">
-            <button
-              type="button"
-              onClick={() => handleAction("simpler")}
-              disabled={!canUseActions}
-              className="btn flex-fill d-flex align-items-center justify-content-center gap-1"
-              style={{
-                background: canUseActions ? "#fffbeb" : "#f9fafb",
-                color: canUseActions ? "#b45309" : "#9ca3af",
-                fontWeight: 800,
-                fontSize: "12px",
-                padding: "11px 12px",
-                border: "1px solid #fde68a",
-                borderRadius: "14px",
-              }}
-            >
-              <HelpCircle size={14} />
-              ساده‌تر بگو
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleAction("alternative")}
-              disabled={!canUseActions}
-              className="btn flex-fill d-flex align-items-center justify-content-center gap-1"
-              style={{
-                background: canUseActions ? "#eef2ff" : "#f9fafb",
-                color: canUseActions ? "#4338ca" : "#9ca3af",
-                fontWeight: 800,
-                fontSize: "12px",
-                padding: "11px 12px",
-                border: "1px solid #c7d2fe",
-                borderRadius: "14px",
-              }}
-            >
-              <RefreshCw size={14} />
-              روش تست‌زنی دیگر
-            </button>
           </div>
-
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSendMessage(input);
-            }}
-            className="d-flex gap-2 align-items-center"
-          >
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleImageChange}
-              style={{ display: "none" }}
-            />
-
-            <button
-              type="button"
-              onClick={() =>
-                fileInputRef.current && fileInputRef.current.click()
-              }
-              disabled={loading}
-              className="btn d-flex align-items-center justify-content-center"
-              style={{
-                width: "46px",
-                height: "46px",
-                borderRadius: "16px",
-                border: selectedImage
-                  ? "1px solid #6255f5"
-                  : "1px solid #e5e7eb",
-                background: selectedImage
-                  ? "rgba(98,85,245,0.08)"
-                  : "#ffffff",
-                color: selectedImage ? "#6255f5" : "#6b7280",
-                flexShrink: 0,
-              }}
-              title="ارسال تصویر"
-            >
-              {selectedImage ? <Paperclip size={17} /> : <ImageIcon size={17} />}
-            </button>
-
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              disabled={loading}
-              placeholder="سوال درسی جدید خود را بپرسید..."
-              className="form-control"
-              style={{
-                borderRadius: "16px",
-                border: "1px solid #e5e7eb",
-                background: "#ffffff",
-                padding: "12px 16px",
-                fontSize: "13px",
-                textAlign: "right",
-                color: "#1f2937",
-                minHeight: "46px",
-                boxShadow: "none",
-              }}
-            />
-
-            <button
-              type="submit"
-              disabled={!canSubmit}
-              className="btn d-flex align-items-center justify-content-center"
-              style={{
-                background: canSubmit ? "#6255f5" : "#c7c9d1",
-                borderRadius: "16px",
-                border: "none",
-                width: "46px",
-                height: "46px",
-                color: "white",
-                flexShrink: 0,
-                boxShadow: canSubmit
-                  ? "0 8px 18px rgba(98,85,245,0.24)"
-                  : "none",
-              }}
-              title="ارسال"
-            >
-              <Send size={18} style={{ transform: "scaleX(-1)" }} />
-            </button>
-          </form>
         </div>
       </div>
     </div>
