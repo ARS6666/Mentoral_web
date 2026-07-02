@@ -776,7 +776,6 @@ export default function Practice() {
                     />
                   </div>
 
-                  {/* ✅ نمایش تصویر سوال یا پیام جایگزین */}
                   <div className="text-end fw-bold mb-3" style={{ fontSize: "15px", lineHeight: "2", color: "#111827" }}>
                     {currentQuestion.questionImage ? (
                       <img
@@ -784,17 +783,13 @@ export default function Practice() {
                         alt={`Question ${currentIndex + 1}`}
                         style={{
                           width: "100%",
-                          maxHeight: "640px", // حداکثر ارتفاع برای جلوگیری از بزرگ شدن بیش از حد
-                          objectFit: "contain", // حفظ نسبت تصویر
-                          borderRadius: "14px",
-                          border: "1px solid #e5e7eb",
+                          maxHeight: "640px",
+                          objectFit: "contain", 
                           background: "#fff",
                         }}
                         onError={(e) => {
-                          // اگر عکس لود نشد، پیام خطا نمایش داده شود
-                          e.target.onerror = null; // جلوگیری از لوپ بی‌نهایت
-                          e.target.style.display = "none"; // مخفی کردن img
-                          // یک المان برای نمایش پیام خطا اضافه کنید (اختیاری)
+                          e.target.onerror = null;
+                          e.target.style.display = "none";
                           const errorDiv = document.createElement("div");
                           errorDiv.style.color = "#991b1b";
                           errorDiv.style.fontSize = "13px";
