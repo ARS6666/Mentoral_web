@@ -1,21 +1,23 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Sparkles, ArrowLeft, Calendar, Brain } from "lucide-react";
+import { useApp } from "../context/AppContext";
 
 export default function FeatureIntroModal() {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
+  // منبع حقیقت وضعیت ورود: AppContext (نه localStorage مستقیم)
+  const { isAuthenticated } = useApp();
 
   useEffect(() => {
     const hasSeenIntro = localStorage.getItem("hasSeenAIIntro");
-    const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
-    if (isLoggedIn && !hasSeenIntro) {
+    if (isAuthenticated && !hasSeenIntro) {
       const timer = setTimeout(() => {
         setIsOpen(true);
       }, 1500);
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [isAuthenticated]);
 
   const handleClose = () => {
     localStorage.setItem("hasSeenAIIntro", "true");
@@ -37,7 +39,7 @@ export default function FeatureIntroModal() {
       style={{
         backgroundColor: "rgba(15, 23, 42, 0.6)",
         backdropFilter: "blur(8px)",
-        zIndex: 10050
+        zIndex: 10050,
       }}
     >
       <div className="modal-dialog modal-dialog-centered modal-md px-3">
@@ -49,7 +51,7 @@ export default function FeatureIntroModal() {
             backdropFilter: "blur(20px)",
             borderRadius: "24px",
             direction: "rtl",
-            fontFamily: "Vazir, Tahoma, sans-serif"
+            fontFamily: "Vazir, Tahoma, sans-serif",
           }}
         >
           {/* دکمه بستن */}
@@ -69,9 +71,9 @@ export default function FeatureIntroModal() {
               style={{
                 width: "72px",
                 height: "72px",
-                background: "linear-gradient(135deg, #6255f5 0%, #4f46e5 100%)",
+                background: "linear-gradient(135deg, #2E7F81 0%, #256A6C 100%)",
                 borderRadius: "50%",
-                boxShadow: "0 8px 20px rgba(98, 85, 245, 0.3)"
+                boxShadow: "0 8px 20px rgba(46,127,129, 0.3)",
               }}
             >
               <Brain size={32} color="#ffffff" />
@@ -88,21 +90,26 @@ export default function FeatureIntroModal() {
             </h4>
 
             <p className="text-secondary small lh-lg mb-4">
-              سلام! به منتورا خوش آمدید. ما برای شما یک دستیار برنامه‌ریز اختصاصی طراحی کرده‌ایم. با این ابزار می‌توانید برنامه‌های درسی و اهداف روزانه خود را بر اساس هوش مصنوعی شخصی‌سازی کنید.
+              سلام! به منتورا خوش آمدید. ما برای شما یک دستیار برنامه‌ریز
+              اختصاصی طراحی کرده‌ایم. با این ابزار می‌توانید برنامه‌های درسی و
+              اهداف روزانه خود را بر اساس هوش مصنوعی شخصی‌سازی کنید.
             </p>
 
             <div
-              className="d-flex align-items-center text-start p-3 mb-4 rounded-3 border"
+              className="d-flex align-items-center text-end p-3 mb-4 rounded-3 border"
               style={{
-                backgroundColor: "rgba(98, 85, 245, 0.05)",
-                borderColor: "rgba(98, 85, 245, 0.1)"
+                backgroundColor: "rgba(46,127,129, 0.05)",
+                borderColor: "rgba(46,127,129, 0.1)",
               }}
             >
               <div className="ms-3">
-                <Calendar size={24} style={{ color: "#6255f5" }} />
+                <Calendar size={24} style={{ color: "#2E7F81" }} />
               </div>
               <div>
-                <h6 className="fw-bold mb-1" style={{ fontSize: "14px", color: "#1e1b4b" }}>
+                <h6
+                  className="fw-bold mb-1"
+                  style={{ fontSize: "14px", color: "#1e1b4b" }}
+                >
                   تقویم تحصیلی و شخصی خودکار
                 </h6>
                 <p className="text-muted mb-0" style={{ fontSize: "11px" }}>
@@ -116,13 +123,14 @@ export default function FeatureIntroModal() {
                 onClick={handleNavigate}
                 className="btn py-3 text-white fw-bold d-flex align-items-center justify-content-center gap-2 border-0"
                 style={{
-                  background: "linear-gradient(135deg, #6255f5 0%, #4f46e5 100%)",
+                  background:
+                    "linear-gradient(135deg, #2E7F81 0%, #256A6C 100%)",
                   borderRadius: "14px",
-                  boxShadow: "0 4px 14px rgba(98, 85, 245, 0.3)"
+                  boxShadow: "0 4px 14px rgba(46,127,129, 0.3)",
                 }}
               >
-                <span>شروع برنامه‌ریزی هوشمند</span>
                 <ArrowLeft size={16} style={{ transform: "rotate(180deg)" }} />
+                <span>شروع برنامه‌ریزی هوشمند</span>
               </button>
 
               <button

@@ -13,7 +13,7 @@ export default function RequireProfile({ children }) {
       >
         <div className="d-flex flex-column align-items-center gap-3">
           <div className="spinner-border text-primary" role="status" />
-          <span style={{ fontSize: "13px", fontWeight: 700, color: "#6b7280" }}>
+          <span style={{ fontSize: "13px", fontWeight: 700, color: "#7C8683" }}>
             داده‌ها در حال همگام‌سازی...
           </span>
         </div>

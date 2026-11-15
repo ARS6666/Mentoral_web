@@ -157,10 +157,10 @@ export default function OTPPage({
   return (
     <div className="d-flex flex-column gap-3">
       <div className="text-center">
-        <h3 className="fw-bold mb-2" style={{ fontSize: "24px", color: "#0f172a" }}>
+        <h3 className="fw-bold mb-2" style={{ fontSize: "24px", color: "#1E2B4D" }}>
           {title}
         </h3>
-        <p className="mb-0" style={{ fontSize: "14px", color: "#64748b" }}>
+        <p className="mb-0" style={{ fontSize: "14px", color: "#7C8683" }}>
           {description || (codeSent ? `کد ارسال‌شده به ${phone} را وارد کنید` : "برای ادامه، کد تایید را دریافت کنید")}
         </p>
       </div>
@@ -213,7 +213,7 @@ export default function OTPPage({
       {/* بخش ۲: تایید کد */}
       {codeSent && (
         <form onSubmit={handleVerifyOtp} className="d-flex flex-column gap-3">
-          <p className="text-center mb-0" style={{ fontSize: "14px", color: "#64748b" }}>
+          <p className="text-center mb-0" style={{ fontSize: "14px", color: "#7C8683" }}>
             کد تایید به شماره <span dir="ltr">{phone}</span> ارسال شد.
           </p>
 
@@ -251,7 +251,7 @@ export default function OTPPage({
 
           <div className="text-center">
             {timer > 0 ? (
-              <small style={{ color: "#64748b" }}>ارسال مجدد تا {timer} ثانیه</small>
+              <small style={{ color: "#7C8683" }}>ارسال مجدد تا {timer} ثانیه</small>
             ) : (
               <button
                 type="button"
@@ -278,7 +278,7 @@ export default function OTPPage({
                 onEdit();
               }}
               className="btn btn-link p-0 text-decoration-none"
-              style={{ color: "#334155" }}
+              style={{ color: "#4A5553" }}
             >
               {editText}
             </button>
@@ -308,17 +308,17 @@ const inputStyle = {
   width: "100%",
   padding: "14px 16px",
   borderRadius: "14px",
-  border: "1px solid #cbd5e1",
+  border: "1px solid #C9C7BC",
   fontSize: "14px",
   backgroundColor: "#ffffff",
 };
 
-const labelStyle = { fontSize: "14px", color: "#334155" };
+const labelStyle = { fontSize: "14px", color: "#4A5553" };
 
 const primaryButton = {
   padding: "14px 18px",
   borderRadius: "14px",
-  backgroundColor: "#2563eb",
+  backgroundColor: "#4E5BC0",
   color: "#ffffff",
   fontSize: "15px",
   border: "none",
@@ -328,7 +328,7 @@ const otpStyle = {
   width: "48px",
   height: "52px",
   borderRadius: "14px",
-  border: "1px solid #cbd5e1",
+  border: "1px solid #C9C7BC",
   fontSize: "20px",
   textAlign: "center",
 };

@@ -3,6 +3,8 @@ import ReactMarkdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
+import normalizeMathMarkdown from "../utils/normalizeMathMarkdown";
+import { showToast, confirmDialog } from "../utils/notify";
 import {
   Send,
   Bot,
@@ -20,6 +22,9 @@ import {
 import "katex/dist/katex.min.css";
 import { useApp } from "../context/AppContext";
 import { apiJson, authHeaders, resolveMediaUrl } from "../utils/api";
+import { Helmet } from 'react-helmet-async';
+import { useSearchParams } from "react-router-dom";
+
 
 const defaultProfile = {
   major: "ریاضی",
@@ -51,7 +56,7 @@ const welcomeMessageFactory = () => ({
   content:
     `سلام قهرمان! من **منتورا** مربی هوشمند تو هستم. 🌟
 
-امروز چه سوال یا مبحثی رو برات کالبدشکافی کنیم؟ هر سوال ریاضی، فیزیک، زیست یا شیمی که برات مبهم هست رو اینجا بفرست تا با هم به ساده‌ترین روش تستی و تشریحی حلش کنیم!`,
+امروز چه سوال یا مبحثی رو برات کالبدشکافی کنیم؟ هر سوال ریاضی، فیزیک، زیست، شیمی یا عربی که برات مبهم هست رو اینجا بفرست تا با هم به ساده‌ترین روش تستی و تشریحی حلش کنیم!`,
   timestamp: formatTime(),
 });
 
@@ -77,7 +82,7 @@ function TypingDots() {
               width: "8px",
               height: "8px",
               borderRadius: "50%",
-              background: "#6255f5",
+              background: "#2E7F81",
               display: "inline-block",
               animation: "tutor-bounce 1.2s infinite ease-in-out",
               animationDelay: `${i * 0.18}s`,
@@ -90,6 +95,8 @@ function TypingDots() {
 }
 
 export default function Tutor() {
+  const [searchParams] = useSearchParams();
+  const requestedSession = searchParams.get("session");
   const { profile: ctxProfile, bridgeQuestion, setBridgeQuestion } = useApp();
   const profile = ctxProfile || defaultProfile;
   const initialQuestion = bridgeQuestion;
@@ -242,7 +249,10 @@ export default function Tutor() {
 
   const deleteSession = async (sessionId) => {
     if (!sessionId || isSessionPending(sessionId)) return;
-    const confirmed = window.confirm("این گفتگو حذف شود؟");
+    const confirmed = await confirmDialog("این گفتگو حذف شود؟", {
+      confirmText: "حذف گفتگو",
+      danger: true,
+    });
     if (!confirmed) return;
 
     setSessionError("");
@@ -293,7 +303,12 @@ export default function Tutor() {
   useEffect(() => {
     if (historyLoaded.current) return;
     historyLoaded.current = true;
-    loadSessions();
+    if (requestedSession) {
+      loadSessions({ selectFirst: false });
+      loadSession(requestedSession);
+    } else {
+      loadSessions();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -347,7 +362,7 @@ export default function Tutor() {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      alert("لطفاً فقط فایل‌های تصویری انتخاب کنید.");
+      showToast("لطفاً فقط فایل‌های تصویری انتخاب کنید.", "warning");
       return;
     }
 
@@ -570,6 +585,13 @@ export default function Tutor() {
   const canSubmit = !activeSessionIsPending && (input.trim() || selectedImage);
 
   return (
+      <>
+    <Helmet>
+      <title>معلم هوشمند AI | رفع اشکال و آموزش ۲۴ ساعته</title>
+      <meta name="description" content="اشکالات درسی خود را از معلم هوشمند منتورا بپرسید. توضیح مفاهیم سخت کتاب‌های درسی به زبان ساده همراه با مثال‌های تعاملی." />
+      <link rel="canonical" href="https://mentoralearn.ir/tutor" />
+    </Helmet>
+    {activeSession?.finalLesson && <p className="caption" style={{ maxWidth: 1180, margin: "0 auto 10px" }}>گفتگو دربارهٔ {activeSession.finalLesson.title} با متن همان درس</p>}
     <div
       className="d-flex flex-column mx-auto position-relative"
       style={{
@@ -578,13 +600,12 @@ export default function Tutor() {
         minHeight: "calc(100vh - 80px)",
         height: "calc(100vh - 80px)",
         fontFamily: "Vazir, Tahoma, Arial, sans-serif",
-        background:
-          "linear-gradient(180deg, #fffefe 0%, #fcfbf9 45%, #faf8ff 100%)",
+        background: "#FFFFFF",
         direction: "rtl",
-        border: "1px solid #f1f2f6",
-        borderRadius: "28px",
+        border: "1px solid #E3E1D8",
+        borderRadius: "16px",
         overflow: "hidden",
-        boxShadow: "0 10px 30px rgba(15, 23, 42, 0.05)",
+        boxShadow: "0 2px 10px rgba(20, 32, 30, 0.05)",
       }}
     >
       <style>
@@ -598,7 +619,7 @@ export default function Tutor() {
           .tutor-session-panel {
             width: 280px;
             flex-shrink: 0;
-            border-left: 1px solid #f1f2f6;
+            border-left: 1px solid #E3E1D8;
           }
 
           .tutor-session-list {
@@ -675,7 +696,7 @@ export default function Tutor() {
         className="bg-white d-flex align-items-center justify-content-between"
         style={{
           padding: "18px 20px",
-          borderBottom: "1px solid #f3f4f6",
+          borderBottom: "1px solid #EFEEE7",
           boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
           flexShrink: 0,
         }}
@@ -687,8 +708,8 @@ export default function Tutor() {
               width: "40px",
               height: "40px",
               borderRadius: "16px",
-              background: "linear-gradient(135deg, #6255f5, #4f46e5)",
-              boxShadow: "0 8px 20px rgba(79,70,229,0.20)",
+              background: "linear-gradient(135deg, #2E7F81, #256A6C)",
+              boxShadow: "0 8px 20px rgba(37,106,108,0.20)",
             }}
           >
             <Bot size={18} />
@@ -700,7 +721,7 @@ export default function Tutor() {
               style={{
                 fontSize: "15px",
                 fontWeight: 800,
-                color: "#111827",
+                color: "#14201E",
               }}
             >
               <span
@@ -708,7 +729,7 @@ export default function Tutor() {
                   width: "8px",
                   height: "8px",
                   borderRadius: "50%",
-                  backgroundColor: "#10b981",
+                  backgroundColor: "#2F8A57",
                   display: "inline-block",
                   boxShadow: "0 0 0 4px rgba(16,185,129,0.12)",
                 }}
@@ -719,7 +740,7 @@ export default function Tutor() {
               className="mb-0 d-none d-md-block"
               style={{
                 fontSize: "11px",
-                color: "#9ca3af",
+                color: "#9AA5A2",
                 fontWeight: 400,
               }}
             >
@@ -733,12 +754,12 @@ export default function Tutor() {
           <div
             style={{
               fontSize: "12px",
-              background: "rgba(98,85,245,0.10)",
-              color: "#6255f5",
+              background: "rgba(46,127,129,0.10)",
+              color: "#2E7F81",
               padding: "8px 12px",
               borderRadius: "12px",
               fontWeight: 800,
-              border: "1px solid rgba(98,85,245,0.14)",
+              border: "1px solid rgba(46,127,129,0.14)",
               whiteSpace: "nowrap",
               backdropFilter: "blur(10px)",
             }}
@@ -755,9 +776,9 @@ export default function Tutor() {
               width: "36px",
               height: "36px",
               borderRadius: "10px",
-              border: "1px solid #e5e7eb",
+              border: "1px solid #E3E1D8",
               background: "#fff",
-              color: "#6255f5",
+              color: "#2E7F81",
               padding: 0,
             }}
             title="گفتگوی جدید"
@@ -773,9 +794,9 @@ export default function Tutor() {
               width: "36px",
               height: "36px",
               borderRadius: "10px",
-              border: "1px solid #e5e7eb",
+              border: "1px solid #E3E1D8",
               background: "#fff",
-              color: "#6255f5",
+              color: "#2E7F81",
               padding: 0,
             }}
             title="نمایش هیستوری"
@@ -809,8 +830,8 @@ export default function Tutor() {
             <div
               style={{
                 borderRadius: "12px",
-                background: "#fff1f2",
-                color: "#be123c",
+                background: "#F9E3E3",
+                color: "#D64545",
                 border: "1px solid #ffe4e6",
                 padding: "9px 10px",
                 fontSize: "11px",
@@ -827,9 +848,9 @@ export default function Tutor() {
           >
             <div
               className="d-flex align-items-center gap-2"
-              style={{ color: "#374151", fontSize: "12px", fontWeight: 900 }}
+              style={{ color: "#4A5553", fontSize: "12px", fontWeight: 900 }}
             >
-              <MessageSquare size={15} color="#6255f5" />
+              <MessageSquare size={15} color="#2E7F81" />
               گفتگوها
             </div>
             <div
@@ -843,9 +864,9 @@ export default function Tutor() {
                   width: "30px",
                   height: "30px",
                   borderRadius: "10px",
-                  border: "1px solid #eef2f7",
-                  background: "#f8fafc",
-                  color: "#6255f5",
+                  border: "1px solid #E3E1D8",
+                  background: "#F7F6F1",
+                  color: "#2E7F81",
                   padding: 0,
                 }}
                 title="به‌روزرسانی گفتگوها"
@@ -861,9 +882,9 @@ export default function Tutor() {
                   width: "30px",
                   height: "30px",
                   borderRadius: "10px",
-                  border: "1px solid #eef2f7",
-                  background: "#f8fafc",
-                  color: "#6255f5",
+                  border: "1px solid #E3E1D8",
+                  background: "#F7F6F1",
+                  color: "#2E7F81",
                   padding: 0,
                 }}
                 title="بستن گفتگوها"
@@ -893,7 +914,7 @@ export default function Tutor() {
                   border: "1px dashed #d8dcf0",
                   borderRadius: "14px",
                   padding: "18px 12px",
-                  color: "#9ca3af",
+                  color: "#9AA5A2",
                   fontSize: "12px",
                   lineHeight: 1.8,
                 }}
@@ -913,11 +934,11 @@ export default function Tutor() {
                   className="tutor-session-item btn text-end"
                   style={{
                     borderRadius: "14px",
-                    border: active ? "1px solid rgba(98,85,245,0.35)" : "1px solid #eef2f7",
-                    background: active ? "rgba(98,85,245,0.08)" : "#f9fafb",
+                    border: active ? "1px solid rgba(46,127,129,0.35)" : "1px solid #E3E1D8",
+                    background: active ? "rgba(46,127,129,0.08)" : "#F7F6F1",
                     padding: "11px",
-                    color: "#111827",
-                    boxShadow: active ? "0 8px 18px rgba(98,85,245,0.08)" : "none",
+                    color: "#14201E",
+                    boxShadow: active ? "0 8px 18px rgba(46,127,129,0.08)" : "none",
                   }}
                 >
                   <div className="d-flex align-items-start gap-2">
@@ -936,7 +957,7 @@ export default function Tutor() {
                       <div
                         style={{
                           fontSize: "10px",
-                          color: "#9ca3af",
+                          color: "#9AA5A2",
                           marginTop: "4px",
                           whiteSpace: "nowrap",
                           overflow: "hidden",
@@ -948,7 +969,7 @@ export default function Tutor() {
                       <div
                         style={{
                           fontSize: "10px",
-                          color: pending ? "#6255f5" : "#a1a1aa",
+                          color: pending ? "#2E7F81" : "#a1a1aa",
                           marginTop: "5px",
                         }}
                       >
@@ -1033,8 +1054,8 @@ export default function Tutor() {
                             height: "34px",
                             borderRadius: "12px",
                             background:
-                              "linear-gradient(135deg, #eef2ff, #f5f3ff)",
-                            color: "#6255f5",
+                              "linear-gradient(135deg, #DCEBEA, #EAF2F1)",
+                            color: "#2E7F81",
                             border: "1px solid #dbe4ff",
                             marginTop: "2px",
                           }}
@@ -1058,14 +1079,14 @@ export default function Tutor() {
                             direction: "rtl",
                             background: isModel
                               ? "#ffffff"
-                              : "linear-gradient(135deg, #6255f5, #5b50e6)",
-                            color: isModel ? "#1f2937" : "#ffffff",
+                              : "linear-gradient(135deg, #2E7F81, #5b50e6)",
+                            color: isModel ? "#14201E" : "#ffffff",
                             border: isModel ? "1px solid #eef0f5" : "none",
                             borderTopRightRadius: isModel ? "6px" : "20px",
                             borderTopLeftRadius: isModel ? "20px" : "6px",
                             boxShadow: isModel
                               ? "0 6px 20px rgba(15,23,42,0.04)"
-                              : "0 8px 20px rgba(98,85,245,0.16)",
+                              : "0 8px 20px rgba(46,127,129,0.16)",
                             fontWeight: isModel ? 400 : 500,
                             overflow: "hidden",
                           }}
@@ -1083,9 +1104,9 @@ export default function Tutor() {
                                   objectFit: "cover",
                                   display: "block",
                                   border: isModel
-                                    ? "1px solid #eef2ff"
+                                    ? "1px solid #DCEBEA"
                                     : "1px solid rgba(255,255,255,0.25)",
-                                  background: "#f8fafc",
+                                  background: "#F7F6F1",
                                   cursor: "pointer",
                                 }}
                                 onError={(event) => {
@@ -1136,7 +1157,7 @@ export default function Tutor() {
                                   <strong
                                     style={{
                                       fontWeight: 900,
-                                      color: "#111827",
+                                      color: "#14201E",
                                     }}
                                   >
                                     {children}
@@ -1147,10 +1168,10 @@ export default function Tutor() {
                                     <code
                                       style={{
                                         borderRadius: "6px",
-                                        background: "#f3f4f6",
+                                        background: "#EFEEE7",
                                         padding: "2px 6px",
                                         fontSize: "12px",
-                                        color: "#1f2937",
+                                        color: "#14201E",
                                       }}
                                     >
                                       {children}
@@ -1158,8 +1179,8 @@ export default function Tutor() {
                                   ) : (
                                     <pre
                                       style={{
-                                        background: "#0f172a",
-                                        color: "#e5e7eb",
+                                        background: "#1E2B4D",
+                                        color: "#E3E1D8",
                                         padding: "12px",
                                         borderRadius: "12px",
                                         overflowX: "auto",
@@ -1189,7 +1210,7 @@ export default function Tutor() {
                                 ),
                               }}
                             >
-                              {m.content}
+                              {normalizeMathMarkdown(m.content)}
                             </ReactMarkdown>
                           ) : (
                             <div>{m.content}</div>
@@ -1199,7 +1220,7 @@ export default function Tutor() {
                         <span
                           style={{
                             fontSize: "10px",
-                            color: "#9ca3af",
+                            color: "#9AA5A2",
                             marginTop: "5px",
                             padding: "0 6px",
                             alignSelf: isModel ? "flex-start" : "flex-end",
@@ -1217,9 +1238,9 @@ export default function Tutor() {
                             width: "34px",
                             height: "34px",
                             borderRadius: "12px",
-                            backgroundColor: "#f8fafc",
+                            backgroundColor: "#F7F6F1",
                             color: "#4b5563",
-                            border: "1px solid #e5e7eb",
+                            border: "1px solid #E3E1D8",
                             marginTop: "2px",
                           }}
                         >
@@ -1238,8 +1259,8 @@ export default function Tutor() {
                         width: "34px",
                         height: "34px",
                         borderRadius: "12px",
-                        background: "linear-gradient(135deg, #eef2ff, #f5f3ff)",
-                        color: "#6255f5",
+                        background: "linear-gradient(135deg, #DCEBEA, #EAF2F1)",
+                        color: "#2E7F81",
                         border: "1px solid #dbe4ff",
                         marginTop: "2px",
                       }}
@@ -1281,14 +1302,14 @@ export default function Tutor() {
                               width: `${uploadProgress}%`,
                               height: "7px",
                               background:
-                                "linear-gradient(90deg, #6255f5 0%, #7c73ff 100%)",
+                                "linear-gradient(90deg, #2E7F81 0%, #7c73ff 100%)",
                               transition: "width 0.2s ease",
                             }}
                           />
                           <div
                             style={{
                               fontSize: "10px",
-                              color: "#6255f5",
+                              color: "#2E7F81",
                               fontWeight: 700,
                               padding: "6px 8px",
                               background: "#f8f9ff",
@@ -1319,9 +1340,9 @@ export default function Tutor() {
                   width: "42px",
                   height: "42px",
                   borderRadius: "50%",
-                  border: "1px solid #e5e7eb",
+                  border: "1px solid #E3E1D8",
                   background: "#ffffff",
-                  color: "#6255f5",
+                  color: "#2E7F81",
                   boxShadow: "0 8px 20px rgba(15,23,42,0.10)",
                   zIndex: 5,
                 }}
@@ -1337,7 +1358,7 @@ export default function Tutor() {
               background:
                 "linear-gradient(to top, #fcfbf9, rgba(252,251,249,0.98), rgba(252,251,249,0.80))",
               padding: "14px 16px 16px",
-              borderTop: "1px solid #f3f4f6",
+              borderTop: "1px solid #EFEEE7",
               flexShrink: 0,
             }}
           >
@@ -1361,7 +1382,7 @@ export default function Tutor() {
                         height: "72px",
                         borderRadius: "14px",
                         objectFit: "cover",
-                        border: "1px solid #f3f4f6",
+                        border: "1px solid #EFEEE7",
                         flexShrink: 0,
                       }}
                     />
@@ -1371,7 +1392,7 @@ export default function Tutor() {
                         style={{
                           fontSize: "12px",
                           fontWeight: 800,
-                          color: "#374151",
+                          color: "#4A5553",
                           whiteSpace: "nowrap",
                           overflow: "hidden",
                           textOverflow: "ellipsis",
@@ -1384,7 +1405,7 @@ export default function Tutor() {
                       <div
                         style={{
                           fontSize: "10px",
-                          color: "#9ca3af",
+                          color: "#9AA5A2",
                           marginBottom: "8px",
                         }}
                       >
@@ -1395,7 +1416,7 @@ export default function Tutor() {
                         style={{
                           height: "7px",
                           borderRadius: "999px",
-                          background: "#eef2ff",
+                          background: "#DCEBEA",
                           overflow: "hidden",
                           border: "1px solid #e1e7ff",
                         }}
@@ -1405,7 +1426,7 @@ export default function Tutor() {
                             width: `${uploadProgress}%`,
                             height: "100%",
                             background:
-                              "linear-gradient(90deg, #6255f5 0%, #7c73ff 100%)",
+                              "linear-gradient(90deg, #2E7F81 0%, #7c73ff 100%)",
                             transition: "width 0.2s ease",
                           }}
                         />
@@ -1416,7 +1437,7 @@ export default function Tutor() {
                           marginTop: "6px",
                           fontSize: "10px",
                           fontWeight: 700,
-                          color: "#6255f5",
+                          color: "#2E7F81",
                         }}
                       >
                         {uploadProgress > 0
@@ -1433,7 +1454,7 @@ export default function Tutor() {
                         borderRadius: "12px",
                         border: "1px solid #f1f2f6",
                         padding: "8px",
-                        color: "#9ca3af",
+                        color: "#9AA5A2",
                         background: "#fff",
                       }}
                     >
@@ -1450,12 +1471,12 @@ export default function Tutor() {
                   disabled={!canUseActions}
                   className="btn flex-fill d-flex align-items-center justify-content-center gap-1"
                   style={{
-                    background: canUseActions ? "#fffbeb" : "#f9fafb",
-                    color: canUseActions ? "#b45309" : "#9ca3af",
+                    background: canUseActions ? "#F7ECD8" : "#F7F6F1",
+                    color: canUseActions ? "#A9741B" : "#9AA5A2",
                     fontWeight: 800,
                     fontSize: "12px",
                     padding: "11px 12px",
-                    border: "1px solid #fde68a",
+                    border: "1px solid #EFE0B8",
                     borderRadius: "14px",
                   }}
                 >
@@ -1469,12 +1490,12 @@ export default function Tutor() {
                   disabled={!canUseActions}
                   className="btn flex-fill d-flex align-items-center justify-content-center gap-1"
                   style={{
-                    background: canUseActions ? "#eef2ff" : "#f9fafb",
-                    color: canUseActions ? "#4338ca" : "#9ca3af",
+                    background: canUseActions ? "#DCEBEA" : "#F7F6F1",
+                    color: canUseActions ? "#1E5859" : "#9AA5A2",
                     fontWeight: 800,
                     fontSize: "12px",
                     padding: "11px 12px",
-                    border: "1px solid #c7d2fe",
+                    border: "1px solid #DCEBEA",
                     borderRadius: "14px",
                   }}
                 >
@@ -1510,12 +1531,12 @@ export default function Tutor() {
                     height: "46px",
                     borderRadius: "16px",
                     border: selectedImage
-                      ? "1px solid #6255f5"
-                      : "1px solid #e5e7eb",
+                      ? "1px solid #2E7F81"
+                      : "1px solid #E3E1D8",
                     background: selectedImage
-                      ? "rgba(98,85,245,0.08)"
+                      ? "rgba(46,127,129,0.08)"
                       : "#ffffff",
-                    color: selectedImage ? "#6255f5" : "#6b7280",
+                    color: selectedImage ? "#2E7F81" : "#7C8683",
                     flexShrink: 0,
                   }}
                   title="ارسال تصویر"
@@ -1532,12 +1553,12 @@ export default function Tutor() {
                   className="form-control"
                   style={{
                     borderRadius: "16px",
-                    border: "1px solid #e5e7eb",
+                    border: "1px solid #E3E1D8",
                     background: "#ffffff",
                     padding: "12px 16px",
                     fontSize: "13px",
                     textAlign: "right",
-                    color: "#1f2937",
+                    color: "#14201E",
                     minHeight: "46px",
                     boxShadow: "none",
                   }}
@@ -1548,7 +1569,7 @@ export default function Tutor() {
                   disabled={!canSubmit}
                   className="btn d-flex align-items-center justify-content-center"
                   style={{
-                    background: canSubmit ? "#6255f5" : "#c7c9d1",
+                    background: canSubmit ? "#2E7F81" : "#c7c9d1",
                     borderRadius: "16px",
                     border: "none",
                     width: "46px",
@@ -1556,7 +1577,7 @@ export default function Tutor() {
                     color: "white",
                     flexShrink: 0,
                     boxShadow: canSubmit
-                      ? "0 8px 18px rgba(98,85,245,0.24)"
+                      ? "0 8px 18px rgba(46,127,129,0.24)"
                       : "none",
                   }}
                   title="ارسال"
@@ -1569,5 +1590,6 @@ export default function Tutor() {
         </div>
       </div>
     </div>
+    </>
   );
 }

@@ -21,11 +21,15 @@ export default function SupportWidget() {
     }
 
     return (
-        <div
+        <button
+            type="button"
             onClick={() => navigate("/support")}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
+            onFocus={() => setIsHovered(true)}
+            onBlur={() => setIsHovered(false)}
             title="پشتیبانی منتورا"
+            aria-label="پشتیبانی منتورا"
             style={{
                 position: "fixed",
                 bottom: "24px",
@@ -39,17 +43,17 @@ export default function SupportWidget() {
                 minWidth: "48px",
                 width: isHovered ? "140px" : "48px",
                 borderRadius: "24px",
-                background: "linear-gradient(135deg, #6255f5 0%, #4f46e5 100%)",
+                background: "linear-gradient(135deg, var(--primary, #3A8778) 0%, var(--primary-hover, #2F7063) 100%)",
                 boxShadow: isHovered
-                    ? "0 10px 25px -5px rgba(98, 85, 245, 0.5), 0 8px 10px -6px rgba(98, 85, 245, 0.5)"
-                    : "0 4px 14px 0 rgba(98, 85, 245, 0.3)",
+                    ? "0 10px 25px -5px rgba(58,135,120, 0.45), 0 8px 10px -6px rgba(58,135,120, 0.45)"
+                    : "0 4px 14px 0 rgba(58,135,120, 0.3)",
                 border: "1px solid rgba(255, 255, 255, 0.2)",
                 transition: "all 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
                 transform: isHovered ? "translateY(-4px) scale(1.05)" : "none",
                 overflow: "hidden",
                 padding: "0 12px",
             }}
-        >
+        >{/* eslint-disable-line */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
 
                 <LifeBuoy
@@ -86,6 +90,6 @@ export default function SupportWidget() {
           to { opacity: 1; transform: translateX(0); }
         }
       `}</style>
-        </div>
+        </button>
     );
 }

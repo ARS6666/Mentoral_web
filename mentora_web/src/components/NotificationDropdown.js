@@ -28,7 +28,7 @@ export default function NotificationDropdown() {
         className="btn p-2 d-flex align-items-center justify-content-center"
         style={{
           borderRadius: 12,
-          border: "1px solid #e5e7eb",
+          border: "1px solid #E3E1D8",
           background: "#fff",
           width: 40,
           height: 40,
@@ -70,7 +70,7 @@ export default function NotificationDropdown() {
             style={{
               padding: "12px 14px",
               fontWeight: 700,
-              borderBottom: "1px solid #f1f5f9",
+              borderBottom: "1px solid #EFEEE7",
               fontSize: 14,
             }}
           >
@@ -97,7 +97,7 @@ export default function NotificationDropdown() {
                 <div
                   style={{
                     fontSize: 11,
-                    color: "#9ca3af",
+                    color: "#9AA5A2",
                     marginTop: 4,
                   }}
                 >
@@ -112,7 +112,7 @@ export default function NotificationDropdown() {
               textAlign: "center",
               padding: 10,
               fontSize: 13,
-              color: "#6255f5",
+              color: "#2E7F81",
               cursor: "pointer",
               background: "#fafafa",
             }}

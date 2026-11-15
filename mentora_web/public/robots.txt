@@ -1,3 +1,4 @@
-# https://www.robotstxt.org/robotstxt.html
+Sitemap: https://mentoralearn.ir/sitemap.xml
 User-agent: *
-Disallow:
+Disallow: /admin/console
+Disallow: /profile

@@ -9,9 +9,9 @@
 .form-control:focus, .form-select:focus {
   background: rgba(0, 0, 0, 0.4) !important;
   color: white !important;
-  box-shadow: 0 0 0 0.25rem rgba(98, 85, 245, 0.5) !important;
+  box-shadow: 0 0 0 0.25rem rgba(46,127,129, 0.5) !important;
 }
 
 /* استایل مخصوص اسکرول بار چت */
 .overflow-auto::-webkit-scrollbar { width: 5px; }
-.overflow-auto::-webkit-scrollbar-thumb { background: #6255f5; border-radius: 10px; }
+.overflow-auto::-webkit-scrollbar-thumb { background: #2E7F81; border-radius: 10px; }

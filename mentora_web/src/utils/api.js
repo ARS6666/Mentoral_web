@@ -1,5 +1,3 @@
-import React from "react";
-
 const TOKEN_KEY = "mentora_token";
 
 export function getToken() {

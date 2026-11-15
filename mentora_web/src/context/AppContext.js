@@ -3,6 +3,22 @@ import { apiJson, getToken, setToken } from "../utils/api";
 
 const AppContext = createContext(null);
 
+const localDateKey = () => {
+  const date = new Date();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${date.getFullYear()}-${month}-${day}`;
+};
+
+const syncTodayTask = (tasks, task) => {
+  const isToday = task.scheduledDate === localDateKey();
+  const exists = tasks.some((item) => item.id === task.id);
+  if (!isToday) return tasks.filter((item) => item.id !== task.id);
+  return exists
+    ? tasks.map((item) => (item.id === task.id ? task : item))
+    : [...tasks, task];
+};
+
 export function AppProvider({ children }) {
   const [profile, setProfile] = useState(null);
   const [tasks, setTasks] = useState([]);
@@ -19,7 +35,7 @@ export function AppProvider({ children }) {
   const [bridgeQuestion, setBridgeQuestion] = useState(null);
   const [latestWeeklyPlan, setLatestWeeklyPlan] = useState(null);
 
-  const loadToday = useCallback(async () => {
+  const loadToday = useCallback(async ({ silent = false } = {}) => {
     const token = getToken();
     if (!token) {
       setProfile(null);
@@ -29,7 +45,7 @@ export function AppProvider({ children }) {
       return;
     }
 
-    setLoading(true);
+    if (!silent) setLoading(true);
     try {
       const { response, data } = await apiJson("/api/planner/today");
       if (response.status === 401) {
@@ -55,7 +71,7 @@ export function AppProvider({ children }) {
     } catch (err) {
       console.error("خطا در همگام‌سازی با سرور:", err);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
 
@@ -101,9 +117,9 @@ export function AppProvider({ children }) {
     setToken(data.token);
     setProfile(data.profile);
     setIsAuthenticated(true);
-    await loadToday();
+    await Promise.all([loadMe(), loadToday()]);
     return data;
-  }, [loadToday]);
+  }, [loadMe, loadToday]);
 
   const register = useCallback(async ({ fullName, phone, email, password, confirmPassword }) => {
     const { response, data } = await apiJson("/api/auth/register", {
@@ -155,6 +171,26 @@ export function AppProvider({ children }) {
     }));
   }, []);
 
+  const syncLatestWeeklyTask = useCallback((task) => {
+    setLatestWeeklyPlan((plan) => {
+      if (!plan || task.weeklyPlanId !== plan.id) return plan;
+      const planTasks = Array.isArray(plan.tasks) ? plan.tasks : [];
+      const exists = planTasks.some((item) => item.id === task.id);
+      return {
+        ...plan,
+        tasks: exists
+          ? planTasks.map((item) => (item.id === task.id ? task : item))
+          : [...planTasks, task],
+      };
+    });
+  }, []);
+
+  const removeLatestWeeklyTask = useCallback((taskId) => {
+    setLatestWeeklyPlan((plan) => plan
+      ? { ...plan, tasks: (plan.tasks || []).filter((task) => task.id !== taskId) }
+      : plan);
+  }, []);
+
   const toggleTask = useCallback(async (taskId, completed) => {
     setTasks((prev) =>
       prev.map((t) => (t.id === taskId ? { ...t, completed } : t))
@@ -168,14 +204,13 @@ export function AppProvider({ children }) {
       });
 
       if (response.ok) {
-        setTasks((prev) =>
-          prev.map((t) => (t.id === taskId ? data.task : t))
-        );
+        setTasks((prev) => syncTodayTask(prev, data.task));
+        syncLatestWeeklyTask(data.task);
       }
     } catch (err) {
       console.error("خطا در به‌روزرسانی کار:", err);
     }
-  }, []);
+  }, [syncLatestWeeklyTask]);
 
   const applyTaskStats = useCallback((data) => {
     setStats((prev) => ({
@@ -198,10 +233,11 @@ export function AppProvider({ children }) {
       throw new Error(data.error || "افزودن تسک ناموفق بود.");
     }
 
-    setTasks((prev) => [...prev, data.task]);
+    setTasks((prev) => syncTodayTask(prev, data.task));
+    syncLatestWeeklyTask(data.task);
     applyTaskStats(data);
     return data.task;
-  }, [applyTaskStats]);
+  }, [applyTaskStats, syncLatestWeeklyTask]);
 
   const updateTask = useCallback(async (taskId, updates) => {
     const { response, data } = await apiJson(`/api/planner/tasks/${taskId}`, {
@@ -214,10 +250,11 @@ export function AppProvider({ children }) {
       throw new Error(data.error || "ویرایش تسک ناموفق بود.");
     }
 
-    setTasks((prev) => prev.map((t) => (t.id === taskId ? data.task : t)));
+    setTasks((prev) => syncTodayTask(prev, data.task));
+    syncLatestWeeklyTask(data.task);
     applyTaskStats(data);
     return data.task;
-  }, [applyTaskStats]);
+  }, [applyTaskStats, syncLatestWeeklyTask]);
 
   const deleteTask = useCallback(async (taskId) => {
     const { response, data } = await apiJson(`/api/planner/tasks/${taskId}`, {
@@ -229,9 +266,10 @@ export function AppProvider({ children }) {
     }
 
     setTasks((prev) => prev.filter((t) => t.id !== taskId));
+    removeLatestWeeklyTask(taskId);
     applyTaskStats(data);
     return data;
-  }, [applyTaskStats]);
+  }, [applyTaskStats, removeLatestWeeklyTask]);
 
   const updateProfile = useCallback((partial) => {
     setProfile((prev) => ({ ...(prev || {}), ...partial }));

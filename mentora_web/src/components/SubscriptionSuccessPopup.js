@@ -40,10 +40,10 @@ export default function SubscriptionSuccessPopup({ isPurchased = true }) {
                         <CheckCircle2 size={34} color="#fff" />
                     </div>
                     <div style={sparkle1Style}>
-                        <Sparkles size={16} color="#8f84ff" />
+                        <Sparkles size={16} color="#6FAFB0" />
                     </div>
                     <div style={sparkle2Style}>
-                        <Sparkles size={14} color="#6255f5" />
+                        <Sparkles size={14} color="#2E7F81" />
                     </div>
                 </div>
 
@@ -79,11 +79,11 @@ const popupStyle = {
     background: "linear-gradient(180deg, #ffffff 0%, #f8f7ff 100%)",
     borderRadius: "28px",
     padding: "28px 24px",
-    boxShadow: "0 24px 80px rgba(98, 85, 245, 0.25)",
+    boxShadow: "0 24px 80px rgba(46,127,129, 0.25)",
     position: "relative",
     textAlign: "center",
     animation: "popupIn 0.28s ease-out",
-    border: "1px solid rgba(98,85,245,0.08)",
+    border: "1px solid rgba(46,127,129,0.08)",
 };
 
 const closeBtnStyle = {
@@ -91,8 +91,8 @@ const closeBtnStyle = {
     top: "14px",
     left: "14px",
     border: "none",
-    background: "rgba(98,85,245,0.08)",
-    color: "#6255f5",
+    background: "rgba(46,127,129,0.08)",
+    color: "#2E7F81",
     width: "36px",
     height: "36px",
     borderRadius: "50%",
@@ -113,11 +113,11 @@ const iconCircleStyle = {
     width: "92px",
     height: "92px",
     borderRadius: "50%",
-    background: "linear-gradient(135deg, #6255f5, #8f84ff)",
+    background: "linear-gradient(135deg, #2E7F81, #6FAFB0)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    boxShadow: "0 18px 40px rgba(98, 85, 245, 0.35)",
+    boxShadow: "0 18px 40px rgba(46,127,129, 0.35)",
 };
 
 const sparkle1Style = {
@@ -151,13 +151,13 @@ const sparkle2Style = {
 const titleStyle = {
     fontSize: "1.35rem",
     fontWeight: "800",
-    color: "#1f2937",
+    color: "#14201E",
     marginBottom: "10px",
 };
 
 const descStyle = {
     fontSize: "0.98rem",
-    color: "#6b7280",
+    color: "#7C8683",
     lineHeight: "1.8",
     marginBottom: "18px",
 };
@@ -168,10 +168,10 @@ const actionBtnStyle = {
     border: "none",
     borderRadius: "16px",
     padding: "13px 18px",
-    background: "linear-gradient(135deg, #6255f5, #8f84ff)",
+    background: "linear-gradient(135deg, #2E7F81, #6FAFB0)",
     color: "#fff",
     fontWeight: "700",
     fontSize: "0.98rem",
     cursor: "pointer",
-    boxShadow: "0 14px 28px rgba(98, 85, 245, 0.25)",
+    boxShadow: "0 14px 28px rgba(46,127,129, 0.25)",
 };

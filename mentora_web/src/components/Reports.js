@@ -1,312 +1,445 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
-  TrendingUp,
+  AlertCircle,
   AlertTriangle,
-  Book,
+  ArrowLeft,
+  CheckCircle2,
+  Clock3,
+  RefreshCw,
   Sparkles,
-  Award,
+  Target,
+  TrendingDown,
+  TrendingUp,
 } from "lucide-react";
+import { Helmet } from "react-helmet-async";
+import { Link } from "react-router-dom";
 
 import { apiJson } from "../utils/api";
+import "./Reports.css";
 
-const toFa = (value) =>
-  String(value).replace(/[0-9]/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[d]);
+const toFa = (value, digits = 0) => {
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) {
+    return "—";
+  }
+
+  return number.toLocaleString("fa-IR", {
+    maximumFractionDigits: digits,
+  });
+};
+
+const clamp = (value, min = 0, max = 100) => {
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) {
+    return min;
+  }
+
+  return Math.min(Math.max(number, min), max);
+};
+
+const getLevelMeta = (level, percent) => {
+  if (level === "عالی" || Number(percent) >= 75) {
+    return {
+      label: "عالی",
+      statusClass: "success",
+      barColor: "var(--rp-success)",
+    };
+  }
+
+  if (level === "ضعف جدی" || Number(percent) < 50) {
+    return {
+      label: "ضعف جدی",
+      statusClass: "danger",
+      barColor: "var(--rp-danger)",
+    };
+  }
+
+  return {
+    label: "نیاز به مرور",
+    statusClass: "warning",
+    barColor: "var(--rp-warning)",
+  };
+};
 
 export default function Reports() {
   const [report, setReport] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const fetchReports = async () => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const { response, data } = await apiJson("/api/reports");
+
+      if (response.ok) {
+        setReport(data || {});
+      } else {
+        setError(data?.error || "دریافت گزارش با مشکل مواجه شد.");
+      }
+    } catch {
+      setError("ارتباط با سرور گزارش‌ها برقرار نشد.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     let active = true;
-    const fetchReports = async () => {
+
+    const load = async () => {
       try {
         const { response, data } = await apiJson("/api/reports");
+
+        if (!active) return;
+
         if (response.ok) {
-          if (active) setReport(data);
+          setReport(data || {});
+        } else {
+          setError(data?.error || "دریافت گزارش با مشکل مواجه شد.");
         }
-      } catch (err) {
-        console.error("خطا در دریافت گزارش‌ها:", err);
+      } catch {
+        if (active) {
+          setError("ارتباط با سرور گزارش‌ها برقرار نشد.");
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
       }
     };
-    fetchReports();
+
+    load();
+
     return () => {
       active = false;
     };
   }, []);
 
-  const topics = report?.topics || [];
-  const primaryWeakness =
-    report?.primaryWeakness ||
-    topics.find((t) => t.level === "ضعف جدی")?.name ||
-    "مشتق کسرها";
-  const averageAccuracy = report?.averageAccuracy ?? 76;
-  const accuracyGrowth = report?.accuracyGrowth ?? 12;
-  const weeklyStudyHours = report?.weeklyStudyHours ?? 28;
+  const topics = useMemo(() => {
+    if (!Array.isArray(report?.topics)) {
+      return [];
+    }
+    return report.topics.filter(Boolean);
+  }, [report]);
+
+  const primaryWeakness = useMemo(() => {
+    if (report?.primaryWeakness) {
+      return report.primaryWeakness;
+    }
+    return (
+      topics.find((topic) => topic.level === "ضعف جدی")?.name ||
+      topics.find((topic) => Number(topic.percent) < 50)?.name ||
+      ""
+    );
+  }, [report, topics]);
+
+  const averageAccuracy =
+    report?.averageAccuracy !== undefined && report?.averageAccuracy !== null
+      ? Number(report.averageAccuracy)
+      : null;
+
+  const accuracyGrowth =
+    report?.accuracyGrowth !== undefined && report?.accuracyGrowth !== null
+      ? Number(report.accuracyGrowth)
+      : null;
+
+  const weeklyStudyHours = Number(report?.weeklyStudyHours ?? 0);
+  const plannedStudyHours = Number(report?.plannedStudyHours ?? 0);
+
+  const strongCount = topics.filter((topic) => {
+    const percent = Number(topic?.percent ?? 0);
+    return topic?.level === "عالی" || percent >= 75;
+  }).length;
+
+  const growthIsPositive = accuracyGrowth !== null && accuracyGrowth >= 0;
 
   return (
-    <div
-      className="container py-4"
-      style={{
-        maxWidth: "1200px",
-        direction: "rtl",
-        fontFamily: "Vazir, Tahoma, Arial, sans-serif",
-      }}
-    >
-      <div className="d-flex flex-column gap-3">
-        <div
-          className="bg-white border shadow-sm text-end"
-          style={{
-            borderRadius: "28px",
-            padding: "20px",
-            borderColor: "#f1f3f5",
-          }}
-        >
-          <h2
-            className="d-flex align-items-center justify-content-start gap-2 fw-bold text-dark mb-4"
-            style={{ fontSize: "14px" }}
-          >
-            روند وضعیت تحصیلی شما
-            <TrendingUp size={16} color="#6255f5" />
-          </h2>
+    <>
+      <Helmet>
+        <title>گزارش عملکرد | منتورا</title>
+        <meta
+          name="description"
+          content="گزارش عملکرد هفتگی، وضعیت مباحث، میزان پیشرفت و پیشنهادهای مطالعاتی منتورا."
+        />
+        <link rel="canonical" href="https://mentoralearn.ir/reports" />
+      </Helmet>
 
-          <div className="row g-3">
-            <div className="col-12 col-md-6">
-              <div
-                style={{
-                  background: "rgba(16,185,129,0.08)",
-                  border: "1px solid rgba(16,185,129,0.16)",
-                  borderRadius: "20px",
-                  padding: "16px",
-                }}
-              >
-                <span
-                  className="d-block fw-bold"
-                  style={{ fontSize: "10px", color: "#059669" }}
-                >
-                  میانگین صحت پاسخ
-                </span>
-                <span
-                  className="d-block"
-                  style={{
-                    fontSize: "28px",
-                    fontWeight: 900,
-                    color: "#047857",
-                    marginTop: "4px",
-                  }}
-                >
-                  {toFa(averageAccuracy)}٪
-                </span>
-                <span
-                  className="d-block"
-                  style={{
-                    fontSize: "10px",
-                    color: "#059669",
-                    marginTop: "2px",
-                    fontWeight: 500,
-                  }}
-                >
-                  {toFa(accuracyGrowth)}٪ رشد نسبت به هفته قبل
-                </span>
+      <main className="reports-page">
+        <div className="reports-container">
+          {error && (
+            <div className="reports-error">
+              <div className="reports-error-text">
+                <AlertCircle size={17} />
+                <span>{error}</span>
               </div>
-            </div>
-
-            <div className="col-12 col-md-6">
-              <div
-                style={{
-                  background: "rgba(99,102,241,0.08)",
-                  border: "1px solid rgba(99,102,241,0.16)",
-                  borderRadius: "20px",
-                  padding: "16px",
-                }}
+              <button
+                type="button"
+                className="reports-retry"
+                onClick={fetchReports}
+                disabled={loading}
               >
-                <span
-                  className="d-block fw-bold"
-                  style={{ fontSize: "10px", color: "#4f46e5" }}
-                >
-                  ساعات مطالعه کل هفته
-                </span>
-                <span
-                  className="d-block"
-                  style={{
-                    fontSize: "28px",
-                    fontWeight: 900,
-                    color: "#4338ca",
-                    marginTop: "4px",
-                  }}
-                >
-                  {toFa(weeklyStudyHours)} ساعت
-                </span>
-                <span
-                  className="d-block"
-                  style={{
-                    fontSize: "10px",
-                    color: "#4f46e5",
-                    marginTop: "2px",
-                    fontWeight: 500,
-                  }}
-                >
-                  مطابق با استانداردهای هدف
-                </span>
+                <RefreshCw
+                  size={14}
+                  className={loading ? "reports-spin" : ""}
+                />
+                تلاش مجدد
+              </button>
+            </div>
+          )}
+
+          {/* Header */}
+          <div className="reports-header">
+            <div>
+              <div className="reports-badge">
+                <span className="reports-badge-dot" />
+                تحلیل هوشمند هفتگی
               </div>
-            </div>
-          </div>
-        </div>
-
-        <div
-          className="bg-white border shadow-sm text-end"
-          style={{
-            borderRadius: "28px",
-            padding: "20px",
-            borderColor: "#f1f3f5",
-          }}
-        >
-          <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
-            <h3
-              className="d-flex align-items-center gap-2 fw-bold text-dark mb-0"
-              style={{ fontSize: "12px" }}
-            >
-              تخمین پایداری مباحث تحصیلی
-              <Book size={15} color="#6255f5" />
-            </h3>
-            <div
-              className="d-flex gap-3 flex-wrap"
-              style={{ fontSize: "10px", fontWeight: 700 }}
-            >
-              <span className="d-flex align-items-center gap-1">
-                <span
-                  style={{
-                    width: "8px",
-                    height: "8px",
-                    borderRadius: "50%",
-                    background: "#10b981",
-                    display: "inline-block",
-                  }}
-                ></span>
-                عالی
-              </span>
-
-              <span className="d-flex align-items-center gap-1">
-                <span
-                  style={{
-                    width: "8px",
-                    height: "8px",
-                    borderRadius: "50%",
-                    background: "#fbbf24",
-                    display: "inline-block",
-                  }}
-                ></span>
-                مرور
-              </span>
-
-              <span className="d-flex align-items-center gap-1">
-                <span
-                  style={{
-                    width: "8px",
-                    height: "8px",
-                    borderRadius: "50%",
-                    background: "#f43f5e",
-                    display: "inline-block",
-                  }}
-                ></span>
-                ضعف
-              </span>
+              <h1>گزارش عملکرد تحصیلی</h1>
+              <p>
+                ارزیابی دقیق وضعیت تست‌زنی، تسلط بر مباحث و اجرای برنامه مطالعه.
+              </p>
             </div>
 
+            <button
+              type="button"
+              className="reports-refresh-btn"
+              onClick={fetchReports}
+              disabled={loading}
+              title="به‌روزرسانی داده‌ها"
+            >
+              <RefreshCw
+                size={14}
+                className={loading ? "reports-spin" : ""}
+              />
+              به‌روزرسانی داده‌ها
+            </button>
           </div>
 
-          <div className="row g-4">
-            {topics.map((t, idx) => (
-              <div className="col-12 col-md-6" key={idx}>
-                <div>
-                  <div
-                    className="d-flex justify-content-between align-items-center mb-2"
-                    style={{ fontSize: "12px" }}
-                  >
-                    <span
-                      style={{
-                        fontWeight: 700,
-                        color: "#6b7280",
-                      }}
-                    >
-                      {t.percent}% آمادگی
-                    </span>
-                    <span
-                      style={{
-                        fontWeight: 700,
-                        color: "#1f2937",
-                      }}
-                    >
-                      {t.name}
-                    </span>
-                  </div>
-
-                  <div
-                    style={{
-                      height: "10px",
-                      width: "100%",
-                      background: "#f3f4f6",
-                      borderRadius: "999px",
-                      overflow: "hidden",
-                    }}
-                  >
-                    <div
-                      style={{
-                        height: "100%",
-                        width: `${t.percent}%`,
-                        background: t.color,
-                        borderRadius: "999px",
-                      }}
-                    ></div>
-                  </div>
+          {/* 4 Clean KPIs */}
+          <section className="reports-kpis-grid" aria-label="شاخص‌های کلیدی عملکرد">
+            {/* KPI 1: Accuracy */}
+            <div className="reports-kpi-card">
+              <div className="reports-kpi-header">
+                <span className="reports-kpi-label">میانگین صحت پاسخ</span>
+                <div className="reports-kpi-icon mint">
+                  <Target size={17} />
                 </div>
               </div>
-            ))}
+              <div className="reports-kpi-val">
+                {loading ? (
+                  <span className="reports-skeleton" />
+                ) : averageAccuracy === null ? (
+                  "—"
+                ) : (
+                  `${toFa(averageAccuracy, 1)}٪`
+                )}
+              </div>
+              <div className="reports-kpi-sub">
+                {accuracyGrowth === null ? (
+                  "داده مقایسه‌ای کافی نیست"
+                ) : (
+                  <span
+                    className={
+                      growthIsPositive ? "reports-growth-pos" : "reports-growth-neg"
+                    }
+                  >
+                    {growthIsPositive ? (
+                      <TrendingUp size={12} style={{ verticalAlign: "-2px", marginLeft: 3 }} />
+                    ) : (
+                      <TrendingDown size={12} style={{ verticalAlign: "-2px", marginLeft: 3 }} />
+                    )}
+                    {toFa(Math.abs(accuracyGrowth), 1)}٪ نسبت به هفته گذشته
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* KPI 2: Completed Study Hours */}
+            <div className="reports-kpi-card">
+              <div className="reports-kpi-header">
+                <span className="reports-kpi-label">ساعات مطالعه انجام‌شده</span>
+                <div className="reports-kpi-icon amber">
+                  <Clock3 size={17} />
+                </div>
+              </div>
+              <div className="reports-kpi-val">
+                {loading ? (
+                  <span className="reports-skeleton" />
+                ) : (
+                  `${toFa(weeklyStudyHours, 1)} ساعت`
+                )}
+              </div>
+              <div className="reports-kpi-sub">
+                {plannedStudyHours > 0
+                  ? `از ${toFa(plannedStudyHours, 1)} ساعت برنامه‌ریزی‌شده`
+                  : "طبق برنامه هفتگی"}
+              </div>
+            </div>
+
+            {/* KPI 3: Mastered Topics */}
+            <div className="reports-kpi-card">
+              <div className="reports-kpi-header">
+                <span className="reports-kpi-label">مباحث مسلط (عالی)</span>
+                <div className="reports-kpi-icon green">
+                  <CheckCircle2 size={17} />
+                </div>
+              </div>
+              <div className="reports-kpi-val">
+                {loading ? (
+                  <span className="reports-skeleton" />
+                ) : (
+                  toFa(strongCount)
+                )}
+              </div>
+              <div className="reports-kpi-sub">
+                {topics.length > 0
+                  ? `از مجموع ${toFa(topics.length)} مبحث بررسی‌شده`
+                  : "در جلسات تمرینی"}
+              </div>
+            </div>
+
+            {/* KPI 4: Priority Topic */}
+            <div className="reports-kpi-card">
+              <div className="reports-kpi-header">
+                <span className="reports-kpi-label">نقطه تمرکز بعدی</span>
+                <div className="reports-kpi-icon blue">
+                  <AlertTriangle size={17} />
+                </div>
+              </div>
+              <div
+                className="reports-kpi-val"
+                style={{ fontSize: "17px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+                title={primaryWeakness || "موردی ثبت نشده"}
+              >
+                {loading ? (
+                  <span className="reports-skeleton" />
+                ) : (
+                  primaryWeakness || "مورد بحرانی وجود ندارد"
+                )}
+              </div>
+              <div className="reports-kpi-sub">
+                {primaryWeakness
+                  ? "نیازمند تمرین و مرور هدفمند"
+                  : "وضعیت یادگیری متعادل است"}
+              </div>
+            </div>
+          </section>
+
+          {report?.finalExams && <section className="reports-panel" style={{ marginBottom: 24 }}>
+            <div className="reports-panel-head"><h2>تمرین تشریحی نهایی</h2><Link to="/exams">رفتن به نهایی</Link></div>
+            <div style={{ padding: 24 }}>
+              <p>{toFa(report.finalExams.answered)} پاسخ ثبت‌شده · {toFa(report.finalExams.graded)} پاسخ خودارزیابی‌شده · {toFa(Math.round(report.finalExams.durationSeconds / 60))} دقیقه تمرین</p>
+              {report.finalExams.graded > 0 && <p>امتیاز خودارزیابی: {toFa(report.finalExams.earnedPoints, 2)} از {toFa(report.finalExams.maxPoints, 2)}. این نتیجه نمرهٔ رسمی امتحان نیست.</p>}
+              {report.finalExams.weakLessons.map(l => <p key={l.lessonId}>نیاز به مرور: {l.subject}، {l.title}</p>)}
+            </div>
+          </section>}
+
+          {/* Main 2-Column Content */}
+          <div className="reports-grid">
+            {/* Column 1: Topics Mastery List */}
+            <section className="reports-panel">
+              <div className="reports-panel-head">
+                <div className="reports-panel-title">
+                  <div className="reports-panel-icon">
+                    <Target size={18} />
+                  </div>
+                  <h2>وضعیت تسلط بر مباحث</h2>
+                </div>
+                <span style={{ fontSize: "12px", color: "var(--rp-text-muted)" }}>
+                  {toFa(topics.length)} مبحث
+                </span>
+              </div>
+
+              {topics.length === 0 ? (
+                <div className="reports-empty">
+                  <div className="reports-empty-icon">
+                    <Target size={24} />
+                  </div>
+                  <h3>هنوز داده‌ای ثبت نشده است</h3>
+                  <p>
+                    با ثبت مطالعه و انجام تست در بخش تمرین، میزان تسلط مباحث در این بخش تحلیل خواهد شد.
+                  </p>
+                </div>
+              ) : (
+                <div className="reports-topics-list">
+                  {topics.map((topic, index) => {
+                    const percent =
+                      topic?.percent === null || topic?.percent === undefined
+                        ? null
+                        : clamp(topic.percent);
+
+                    const level = getLevelMeta(topic?.level, topic?.percent);
+
+                    return (
+                      <div
+                        className="reports-topic-row"
+                        key={topic?.id ?? topic?.name ?? index}
+                      >
+                        <span className="reports-topic-title" title={topic?.name || ""}>
+                          {topic?.name || "مبحث بدون عنوان"}
+                        </span>
+
+                        <div className="reports-topic-bar-wrap">
+                          <div className="reports-bar-track">
+                            <div
+                              className="reports-bar-fill"
+                              style={{
+                                width: `${percent ?? 0}%`,
+                                background: level.barColor,
+                              }}
+                            />
+                          </div>
+                          <span className="reports-topic-pct">
+                            {percent === null ? "—" : `${toFa(percent, 0)}٪`}
+                          </span>
+                        </div>
+
+                        <span className={`reports-topic-badge ${level.statusClass}`}>
+                          {level.label}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+
+            {/* Column 2: Mentora Smart Insight */}
+            <section className="reports-insight-card">
+              <div>
+                <div className="reports-insight-tag">
+                  <Sparkles size={12} />
+                  پیشنهاد هوشمند منتورا
+                </div>
+
+                <h3>
+                  {primaryWeakness
+                    ? `تقویت مبحث «${primaryWeakness}»`
+                    : "حفظ ریتم پایدار مطالعه"}
+                </h3>
+
+                <p>
+                  {primaryWeakness
+                    ? `بر اساس تحلیل آخرین تمرین‌ها و تست‌های شما، رفع اشکال روی مبحث «${primaryWeakness}» بالاترین اولویت را برای رشد درصد و تراز شما دارد.`
+                    : "روند مطالعه و یادگیری شما در سطح مطلوبی قرار دارد. با ادامه تست‌زنی و مرورهای منظم در زمان مقرر، این آمادگی را حفظ کنید."}
+                </p>
+              </div>
+
+              <Link
+                to={primaryWeakness ? "/tutor" : "/today"}
+                className="reports-insight-btn"
+              >
+                <span>{primaryWeakness ? "رفع اشکال با مربی هوشمند" : "مشاهده برنامه امروز"}</span>
+                <ArrowLeft size={16} />
+              </Link>
+            </section>
           </div>
         </div>
-        <div
-          className="d-flex gap-3 text-end"
-          style={{
-            background: "#fff1f2",
-            border: "1px solid #fecdd3",
-            borderRadius: "28px",
-            padding: "18px",
-          }}
-        >
-          <div style={{ color: "#e11d48", paddingTop: "2px" }} className=" d-flex align-itens-center justify-content-center ">
-            <AlertTriangle size={50} />
-          </div>
-
-          <div className="flex-grow-1">
-            <h4
-              className="d-flex align-items-center justify-content-start gap-2 fw-bold mb-2"
-              style={{
-                fontSize: "12px",
-                color: "#9f1239",
-              }}
-            >
-              <Sparkles size={12} />
-              توصیه فوری هوش مصنوعی منتورا
-            </h4>
-
-            <p
-              className="mb-0"
-              style={{
-                fontSize: "11px",
-                color: "#be123c",
-                lineHeight: "1.9",
-                fontWeight: 300,
-              }}
-            >
-              بنابر نتایج تست‌های اخیر، مبحث{" "}
-              <strong style={{ fontWeight: 700 }}>
-                «{primaryWeakness}»
-              </strong>{" "}
-              نیازمند بالاترین اقدام فوری است. پیشنهاد می‌کنیم فردا علاوه بر
-              برنامه روتین، حداقل ۱۰ دقیقه گلسبرگ یا خلاصه فرمول مشتق را مرور
-              کنید یا از بخش منتورا کمک بگیرید.
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
+      </main>
+    </>
   );
 }

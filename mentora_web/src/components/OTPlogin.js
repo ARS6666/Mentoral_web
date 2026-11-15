@@ -92,7 +92,7 @@ export default function PhoneLogin() {
         <div
             className="min-vh-100 d-flex align-items-center justify-content-center px-3"
             style={{
-                background: "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)",
+                background: "linear-gradient(135deg, #F7F6F1 0%, #e2e8f0 100%)",
                 fontFamily: "Vazir, Inter, Arial, sans-serif",
                 direction: "rtl"
             }}
@@ -109,7 +109,7 @@ export default function PhoneLogin() {
 
                 <div className="text-center mb-4">
                     <h3 className="fw-bold mb-2">ورود با رمز یکبار مصرف</h3>
-                    <p style={{ fontSize: "14px", color: "#64748b" }}>
+                    <p style={{ fontSize: "14px", color: "#7C8683" }}>
                         برای ادامه کد ارسال شده را وارد کنید
                     </p>
                 </div>
@@ -146,7 +146,7 @@ export default function PhoneLogin() {
                     <>
                         <p
                             className="text-center mb-4"
-                            style={{ fontSize: "14px", color: "#64748b" }}
+                            style={{ fontSize: "14px", color: "#7C8683" }}
                         >
                             کد ارسال شده به {phone}
                         </p>
@@ -169,7 +169,7 @@ export default function PhoneLogin() {
                         <div className="text-center mt-3">
 
                             {timer > 0 ? (
-                                <small style={{ color: "#64748b" }}>
+                                <small style={{ color: "#7C8683" }}>
                                     ارسال مجدد تا {timer} ثانیه
                                 </small>
                             ) : (
@@ -195,14 +195,14 @@ const inputStyle = {
     width: "100%",
     padding: "14px 16px",
     borderRadius: "14px",
-    border: "1px solid #cbd5e1",
+    border: "1px solid #C9C7BC",
     fontSize: "14px"
 };
 
 const primaryButton = {
     padding: "14px",
     borderRadius: "14px",
-    background: "#2563eb",
+    background: "#4E5BC0",
     color: "#fff"
 };
 
@@ -210,7 +210,7 @@ const otpStyle = {
     width: "52px",
     height: "52px",
     borderRadius: "14px",
-    border: "1px solid #cbd5e1",
+    border: "1px solid #C9C7BC",
     fontSize: "20px",
     textAlign: "center"
 };

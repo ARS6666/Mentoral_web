@@ -54,13 +54,13 @@ const Onboarding = () => {
           width: "100%",
           borderRadius: "24px",
           backgroundColor: "#fff",
-          border: "1px solid #f1f5f9"
+          border: "1px solid #EFEEE7"
         }}
       >
         <div
           className="col-md-5 d-flex flex-column justify-content-center align-items-center text-center text-md-end p-4 p-md-5 position-relative text-white"
           style={{
-            background: "linear-gradient(135deg, #6255f5, #4f46e5)"
+            background: "linear-gradient(135deg, #2E7F81, #256A6C)"
           }}
         >
           <div className="position-absolute opacity-10 d-none d-md-block" style={{ left: "-20px", bottom: "-20px" }}>
@@ -69,7 +69,7 @@ const Onboarding = () => {
           <h1 className="display-5 fw-black mb-3 position-relative z-1" style={{ fontWeight: "900" }}>
             منتورا<br className="d-none d-md-block" /> Mentora
           </h1>
-          <p className="lead fw-light position-relative z-1" style={{ fontSize: "1.1rem", opacity: 0.9 }}>
+          <p className="lead fw-light position-relative z-1" style={{ fontSize: "1.1rem", opacity: 0.9, color:"white" }}>
             مربی شخصی‌سازی‌شده و همگام با برنامه کنکور شما
           </p>
         </div>
@@ -100,7 +100,7 @@ const Onboarding = () => {
                       onClick={() => setGrade(g)}
                       className={`btn w-100 py-2 fw-bold small ${grade === g
                         ? "btn-primary shadow-sm"
-                        : "btn-light border text-muted"
+                        : "btn-outline"
                         }`}
                       style={{ borderRadius: "12px" }}
                     >
@@ -124,7 +124,7 @@ const Onboarding = () => {
                       onClick={() => setMajor(m)}
                       className={`btn w-100 py-2 fw-bold small ${major === m
                         ? "btn-primary shadow-sm"
-                        : "btn-light border text-muted"
+                        : "btn-outline"
                         }`}
                       style={{ borderRadius: "12px" }}
                     >
@@ -145,7 +145,7 @@ const Onboarding = () => {
                 value={targetRank}
                 onChange={(e) => setTargetRank(e.target.value)}
                 className="form-control text-end"
-                style={{ borderRadius: "12px", backgroundColor: "#f8fafc", fontSize: "14px", padding: "12px" }}
+                style={{ borderRadius: "12px", backgroundColor: "#F7F6F1", fontSize: "14px", padding: "12px" }}
                 placeholder="مثلاً: زیر ۱۰۰۰ منطقه"
               />
             </div>
@@ -179,7 +179,7 @@ const Onboarding = () => {
               type="submit"
               disabled={loading}
               className="btn btn-primary w-100 py-3 fw-bold shadow-sm"
-              style={{ borderRadius: "14px", backgroundColor: "#6255f5", borderColor: "#6255f5" }}
+              style={{ borderRadius: "14px", backgroundColor: "#2E7F81", borderColor: "#2E7F81" }}
             >
               {loading ? (
                 <div className="spinner-border spinner-border-sm me-2" role="status"></div>
@@ -192,12 +192,12 @@ const Onboarding = () => {
       </div>
 
       <style>{`
-        .btn-primary { background-color: #6255f5; border-color: #6255f5; }
-        .btn-primary:hover { background-color: #4f46e5; border-color: #4f46e5; }
-        .bg-primary-subtle { backgroundColor: rgba(98, 85, 245, 0.1) !important; }
-        .form-range::-webkit-slider-thumb { background: #6255f5; }
-        .form-range::-moz-range-thumb { background: #6255f5; }
-        .form-control:focus { border-color: #6255f5; box-shadow: 0 0 0 0.2rem rgba(98, 85, 245, 0.25); }
+        .btn-primary { background-color: #2E7F81; border-color: #2E7F81; }
+        .btn-primary:hover { background-color: #256A6C; border-color: #256A6C; }
+        .bg-primary-subtle { backgroundColor: rgba(46,127,129, 0.1) !important; }
+        .form-range::-webkit-slider-thumb { background: #2E7F81; }
+        .form-range::-moz-range-thumb { background: #2E7F81; }
+        .form-control:focus { border-color: #2E7F81; box-shadow: 0 0 0 0.2rem rgba(46,127,129, 0.25); }
       `}</style>
     </div>
   );

@@ -1,9 +1,7 @@
 import React, { useState } from "react";
 import {
-  CheckCircle2,
-  Circle,
+  Check,
   Flame,
-  Calendar,
   Sparkles,
   BookOpen,
   Clock,
@@ -12,9 +10,13 @@ import {
   Save,
   Trash2,
   X,
+  ArrowLeft,
+  Target,
+  MessageSquare,
 } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { Link } from "react-router-dom";
+import "./Today.css";
 
 const formatLocalDate = (date) => {
   const year = date.getFullYear();
@@ -23,17 +25,65 @@ const formatLocalDate = (date) => {
   return `${year}-${month}-${day}`;
 };
 
-export default function Today() {
-  const { profile, tasks, stats, toggleTask, createTask, updateTask, deleteTask } = useApp();
-  const onToggleTask = toggleTask;
-  const today = new Date();
-  const todayIso = formatLocalDate(today);
-  const emptyTaskForm = {
-    title: "",
-    duration: "",
-    category: "شخصی",
-    scheduledDate: todayIso,
+const taskTimeRange = (duration = "") => {
+  const matches =
+    String(duration)
+      .replace(/[۰-۹]/g, (digit) => "۰۱۲۳۴۵۶۷۸۹".indexOf(digit))
+      .match(/(?:[01]\d|2[0-3]):[0-5]\d/g) || [];
+
+  return {
+    startTime: matches[0] || "",
+    endTime: matches[1] || "",
   };
+};
+
+const validTimeRange = ({ startTime, endTime }) =>
+  Boolean(startTime && endTime && startTime < endTime);
+
+const taskPayload = (values) => ({
+  title: values.title,
+  duration: `${values.startTime} تا ${values.endTime}`,
+  category: values.category,
+  scheduledDate: values.scheduledDate,
+});
+
+const getCategoryClass = (category) => {
+  switch (category) {
+    case "ریاضی":
+      return "today-page-tag math";
+    case "شیمی":
+      return "today-page-tag chemistry";
+    case "فیزیک":
+      return "today-page-tag physics";
+    case "زیست‌شناسی":
+    case "زیست":
+      return "today-page-tag biology";
+    default:
+      return "today-page-tag general";
+  }
+};
+
+const todayIso = formatLocalDate(new Date());
+
+const emptyTaskForm = {
+  title: "",
+  startTime: "",
+  endTime: "",
+  category: "عمومی",
+  scheduledDate: todayIso,
+};
+
+export default function Today() {
+  const {
+    tasks = [],
+    stats = {},
+    profile = {},
+    toggleTask,
+    createTask,
+    updateTask,
+    deleteTask,
+  } = useApp();
+
   const [showAddTask, setShowAddTask] = useState(false);
   const [taskForm, setTaskForm] = useState(emptyTaskForm);
   const [editingTaskId, setEditingTaskId] = useState(null);
@@ -47,35 +97,28 @@ export default function Today() {
     month: "long",
   });
 
-  const { readinessScore = 0, streakCount = 0, xpPoints = 0, programStartsTomorrow, upcomingTasksCount } = stats || {};
+  const {
+    streakCount = 0,
+    xpPoints = 0,
+    programStartsTomorrow,
+    upcomingTasksCount,
+  } = stats || {};
 
-  const safeProfile =
-    profile && typeof profile === "object" ? profile : {};
-
+  const safeProfile = profile && typeof profile === "object" ? profile : {};
   const safeTasks = Array.isArray(tasks) ? tasks : [];
-
-  const completedCount = safeTasks.filter((t) => t?.completed).length;
+  const completedCount = safeTasks.filter((task) => task?.completed).length;
 
   const currentProgress =
     safeTasks.length > 0
       ? Math.round((completedCount / safeTasks.length) * 100)
       : 0;
 
-  const majorText = safeProfile?.major || "عمومی";
   const targetRankText = safeProfile?.targetRank || "ثبت نشده";
-
-  const quote =
-    majorText === "ریاضی"
-      ? "موفقیت مجموعه‌ای از مسئله‌های کوچکی است که هر روز حل می‌شوند. با تمرکز و استمرار ادامه بده؛ تو از چیزی که فکر می‌کنی قوی‌تری."
-      : majorText === "تجربی"
-        ? "سلول به سلولِ تلاشت تو را به هدفت نزدیک‌تر می‌کند. امروز با نظم، آرامش و استمرار پیش برو تا نتیجه‌ای درخشان بسازی."
-        : majorText === "انسانی"
-          ? "پیشرفت بزرگ، حاصل قدم‌های کوچک اما پیوسته است. امروز هم با تمرکز و اعتمادبه‌نفس جلو برو؛ آینده با تلاش تو ساخته می‌شود."
-          : "هر قدمی که امروز برمی‌داری، تو را به هدفت نزدیک‌تر می‌کند. با تمرکز، نظم و امید ادامه بده.";
+  const firstName = (safeProfile?.fullName || safeProfile?.name || "").split(" ")[0];
 
   const handleToggleTask = (task) => {
-    if (!onToggleTask || task?.id === undefined || task?.id === null) return;
-    onToggleTask(task.id, !task.completed);
+    if (!toggleTask || task?.id === undefined || task?.id === null) return;
+    toggleTask(task.id, !task.completed);
   };
 
   const startEditTask = (task) => {
@@ -83,7 +126,7 @@ export default function Today() {
     setEditingTaskId(task.id);
     setEditingForm({
       title: task.title || "",
-      duration: task.duration || "",
+      ...taskTimeRange(task.duration),
       category: task.category || "عمومی",
       scheduledDate: task.scheduledDate || todayIso,
     });
@@ -91,15 +134,23 @@ export default function Today() {
 
   const handleAddTask = async (event) => {
     event.preventDefault();
+    if (!createTask) return;
+
     if (!taskForm.title.trim()) {
-      setTaskActionError("عنوان تسک را وارد کن.");
+      setTaskActionError("عنوان تسک الزامی است.");
+      return;
+    }
+
+    if (!validTimeRange(taskForm)) {
+      setTaskActionError("ساعت شروع باید قبل از ساعت پایان باشد.");
       return;
     }
 
     setSavingTask(true);
     setTaskActionError("");
+
     try {
-      await createTask(taskForm);
+      await createTask(taskPayload(taskForm));
       setTaskForm(emptyTaskForm);
       setShowAddTask(false);
     } catch (err) {
@@ -111,15 +162,23 @@ export default function Today() {
 
   const handleSaveTask = async (event) => {
     event.preventDefault();
-    if (!editingTaskId || !editingForm.title.trim()) {
-      setTaskActionError("عنوان تسک نمی‌تواند خالی باشد.");
+    if (!updateTask || !editingTaskId) return;
+
+    if (!editingForm.title.trim()) {
+      setTaskActionError("عنوان تسک الزامی است.");
+      return;
+    }
+
+    if (!validTimeRange(editingForm)) {
+      setTaskActionError("ساعت شروع باید قبل از ساعت پایان باشد.");
       return;
     }
 
     setSavingTask(true);
     setTaskActionError("");
+
     try {
-      await updateTask(editingTaskId, editingForm);
+      await updateTask(editingTaskId, taskPayload(editingForm));
       setEditingTaskId(null);
     } catch (err) {
       setTaskActionError(err.message || "ویرایش تسک ناموفق بود.");
@@ -129,8 +188,10 @@ export default function Today() {
   };
 
   const handleDeleteTask = async (taskId) => {
+    if (!deleteTask || !taskId) return;
     setSavingTask(true);
     setTaskActionError("");
+
     try {
       await deleteTask(taskId);
       if (editingTaskId === taskId) {
@@ -143,731 +204,456 @@ export default function Today() {
     }
   };
 
-  const getCategoryStyles = (category) => {
-    switch (category) {
-      case "زیست‌شناسی":
-        return {
-          border: "1px solid #bbf7d0",
-          background: "#ecfdf5",
-          color: "#059669",
-        };
-      case "فیزیک":
-        return {
-          border: "1px solid #bfdbfe",
-          background: "#eff6ff",
-          color: "#2563eb",
-        };
-      case "شیمی":
-        return {
-          border: "1px solid #fecdd3",
-          background: "#fff1f2",
-          color: "#e11d48",
-        };
-      case "ریاضی":
-        return {
-          border: "1px solid #ddd6fe",
-          background: "#f5f3ff",
-          color: "#7c3aed",
-        };
-      case "ادبیات":
-      case "علوم و فنون":
-      case "عربی":
-      case "دینی":
-      case "فلسفه":
-      case "منطق":
-      case "تاریخ":
-      case "جغرافیا":
-        return {
-          border: "1px solid #fde68a",
-          background: "#fffbeb",
-          color: "#b45309",
-        };
-      default:
-        return {
-          border: "1px solid #e9d5ff",
-          background: "#faf5ff",
-          color: "#9333ea",
-        };
-    }
-  };
-
   return (
-    <div
-      className="container py-4"
-      style={{
-        maxWidth: "1200px",
-        direction: "rtl",
-        textAlign: "right",
-        fontFamily: "Vazir, Tahoma, Arial, sans-serif",
-      }}
-    >
-      <div className="d-flex flex-column gap-3">
-        <div
-          className="d-flex justify-content-between align-items-center bg-white border shadow-sm"
-          style={{
-            borderRadius: "20px",
-            padding: "16px",
-            borderColor: "#f1f3f5",
-          }}
-        >
-          <div className="d-flex align-items-center gap-2">
-            <Calendar size={18} color="#6255f5" />
-            <span
-              style={{
-                fontSize: "13px",
-                fontWeight: 700,
-                color: "#374151",
-              }}
-            >
+    <main className="today-page" dir="rtl">
+      <div className="today-page-container">
+        {/* Minimal Clean Header */}
+        <header className="today-page-header">
+          <div className="today-page-header-text">
+            <div className="today-page-date">
+              <span className="today-page-date-dot" />
               {formattedDate}
-            </span>
-          </div>
-
-          <div
-            className="d-flex align-items-center gap-2"
-            style={{
-              background: "#fffbeb",
-              padding: "6px 12px",
-              borderRadius: "14px",
-              border: "1px solid #fde68a",
-            }}
-          >
-            <Flame size={18} color="#f59e0b" fill="#f59e0b" />
-            <span
-              style={{
-                fontSize: "12px",
-                fontWeight: 900,
-                color: "#b45309",
-              }}
-            >
-              {streakCount} روز پیاپی
-            </span>
-          </div>
-        </div>
-
-        <div
-          className="position-relative overflow-hidden text-white"
-          style={{
-            borderRadius: "28px",
-            padding: "20px",
-            background: "linear-gradient(to left, #6255f5, #4f46e5)",
-            boxShadow: "0 10px 30px rgba(79,70,229,0.25)",
-          }}
-        >
-          <div
-            style={{
-              position: "absolute",
-              top: "-24px",
-              left: "-24px",
-              width: "96px",
-              height: "96px",
-              background: "rgba(255,255,255,0.06)",
-              borderRadius: "50%",
-            }}
-          />
-
-          <div
-            style={{
-              position: "absolute",
-              bottom: "-32px",
-              right: "-32px",
-              width: "128px",
-              height: "128px",
-              background: "rgba(255,255,255,0.06)",
-              borderRadius: "50%",
-            }}
-          />
-
-          <div
-            className="row align-items-center position-relative"
-            style={{ zIndex: 2 }}
-          >
-            <div className="col-12 col-md-8 mb-3 mb-md-0 text-center text-md-end">
-              <span
-                className="d-inline-flex align-items-center gap-1"
-                style={{
-                  background: "rgba(255,255,255,0.15)",
-                  padding: "4px 10px",
-                  borderRadius: "999px",
-                  fontSize: "10px",
-                  fontWeight: 700,
-                  backdropFilter: "blur(8px)",
-                }}
-              >
-                <Sparkles size={11} />
-                هدف رتبه: {targetRankText}
-              </span>
-
-              <h2
-                className="fw-bold mt-3 mb-2"
-                style={{
-                  fontSize: "24px",
-                  letterSpacing: "-0.3px",
-                }}
-              >
-                وضعیت آمادگی امروز شما
-              </h2>
-
-              <p
-                className="mb-0"
-                style={{
-                  fontSize: "11px",
-                  color: "#e0e7ff",
-                  lineHeight: "1.9",
-                }}
-              >
-                با انجام کارهای امروز، قدم‌به‌قدم به هدف خود نزدیک‌تر می‌شوید.
-              </p>
             </div>
 
-            <div className="col-12 col-md-4 d-flex justify-content-center justify-content-md-end">
-              <div
-                className="d-flex flex-column align-items-center justify-content-center"
-                style={{
-                  background: "rgba(255,255,255,0.12)",
-                  padding: "18px",
-                  borderRadius: "20px",
-                  border: "1px solid rgba(255,255,255,0.15)",
-                  minWidth: "120px",
-                  backdropFilter: "blur(10px)",
-                }}
-              >
-                <span style={{ fontSize: "32px", fontWeight: 900 }}>
-                  {currentProgress}٪
-                </span>
-                <span
-                  style={{
-                    fontSize: "10px",
-                    marginTop: "4px",
-                    color: "#ede9fe",
-                  }}
-                >
-                  پیشرفت امروز
-                </span>
-              </div>
-            </div>
+            <h1>
+              {firstName ? `سلام ${firstName}، برنامه امروزت اینجاست` : "برنامه مطالعه امروز"}
+            </h1>
+
+            <p>
+              {safeTasks.length > 0
+                ? `${completedCount} از ${safeTasks.length} کار تکمیل شده است (${currentProgress}٪ پیشرفت)`
+                : "تسک‌های امروزت را مدیریت کن و با آرامش پیش برو."}
+            </p>
           </div>
 
-          <div
-            className="mt-4"
-            style={{
-              height: "8px",
-              width: "100%",
-              background: "rgba(255,255,255,0.15)",
-              borderRadius: "999px",
-              overflow: "hidden",
-            }}
-          >
-            <div
-              style={{
-                width: `${currentProgress}%`,
-                height: "100%",
-                background: "#fbbf24",
-                borderRadius: "999px",
-                transition: "all 0.5s ease",
-              }}
-            />
-          </div>
-
-          <div
-            className="d-flex justify-content-between align-items-center mt-3"
-            style={{
-              fontSize: "11px",
-              color: "#ddd6fe",
-              fontWeight: 500,
-            }}
-          >
-            <span>امتیاز امروز: {xpPoints}</span>
-            <span>
-              {completedCount} از {safeTasks.length} کار انجام شده
-            </span>
-          </div>
-        </div>
-
-        <div
-          className="text-end"
-          style={{
-            background: "rgba(98,85,245,0.05)",
-            border: "1px solid rgba(98,85,245,0.15)",
-            borderRadius: "20px",
-            padding: "16px",
-          }}
-        >
-          <h3
-            className="d-flex align-items-center gap-2 mb-2"
-            style={{
-              fontSize: "12px",
-              fontWeight: 700,
-              color: "#6255f5",
-            }}
-          >
-            <Sparkles size={13} />
-            پیشنهاد روزانه منتورا برای رشته {majorText}
-          </h3>
-
-          <p
-            className="mb-0"
-            style={{
-              fontSize: "12px",
-              color: "#374151",
-              lineHeight: "1.9",
-              fontWeight: 300,
-            }}
-          >
-            {quote}
-          </p>
-        </div>
-
-        {/* کارت خلاصه */}
-        <div className="row g-3">
-          <div className="col-12 col-md-4">
-            <div
-              className="bg-white h-100"
-              style={{
-                borderRadius: "20px",
-                padding: "16px",
-                border: "1px solid #eef2f7",
-                boxShadow: "0 2px 8px rgba(15,23,42,0.04)",
-              }}
-            >
-              <div
-                className="d-flex align-items-center gap-2 mb-2"
-                style={{ color: "#6255f5", fontWeight: 700, fontSize: "12px" }}
-              >
-                <Sparkles size={15} />
-                آمادگی ذهنی
-              </div>
-              <div
-                style={{
-                  fontSize: "24px",
-                  fontWeight: 900,
-                  color: "#111827",
-                }}
-              >
-                {readinessScore}
-              </div>
-              <div style={{ fontSize: "11px", color: "#6b7280" }}>
-                امتیاز آمادگی امروز
-              </div>
-            </div>
-          </div>
-
-          <div className="col-12 col-md-4">
-            <div
-              className="bg-white h-100"
-              style={{
-                borderRadius: "20px",
-                padding: "16px",
-                border: "1px solid #eef2f7",
-                boxShadow: "0 2px 8px rgba(15,23,42,0.04)",
-              }}
-            >
-              <div
-                className="d-flex align-items-center gap-2 mb-2"
-                style={{ color: "#10b981", fontWeight: 700, fontSize: "12px" }}
-              >
-                <CheckCircle2 size={15} />
-                کارهای تکمیل‌شده
-              </div>
-              <div
-                style={{
-                  fontSize: "24px",
-                  fontWeight: 900,
-                  color: "#111827",
-                }}
-              >
-                {completedCount}
-              </div>
-              <div style={{ fontSize: "11px", color: "#6b7280" }}>
-                تعداد کارهای انجام‌شده
-              </div>
-            </div>
-          </div>
-
-          <div className="col-12 col-md-4">
-            <div
-              className="bg-white h-100"
-              style={{
-                borderRadius: "20px",
-                padding: "16px",
-                border: "1px solid #eef2f7",
-                boxShadow: "0 2px 8px rgba(15,23,42,0.04)",
-              }}
-            >
-              <div
-                className="d-flex align-items-center gap-2 mb-2"
-                style={{ color: "#f59e0b", fontWeight: 700, fontSize: "12px" }}
-              >
-                <Clock size={15} />
-                کارهای باقی‌مانده
-              </div>
-              <div
-                style={{
-                  fontSize: "24px",
-                  fontWeight: 900,
-                  color: "#111827",
-                }}
-              >
-                {safeTasks.length - completedCount}
-              </div>
-              <div style={{ fontSize: "11px", color: "#6b7280" }}>
-                تعداد کارهای ناتمام
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* فهرست کارهای امروز */}
-        <div>
-          <div className="d-flex justify-content-between align-items-center gap-2 mb-3 px-1 flex-wrap">
+          <div className="today-page-header-actions">
             <button
               type="button"
               onClick={() => {
                 setTaskActionError("");
                 setShowAddTask((prev) => !prev);
               }}
-              className="btn d-inline-flex align-items-center gap-2 fw-bold"
-              style={{
-                borderRadius: "12px",
-                background: "#6255f5",
-                color: "#fff",
-                border: "none",
-                fontSize: "12px",
-                padding: "9px 12px",
-              }}
+              className={showAddTask ? "today-page-add-button is-close" : "today-page-add-button"}
             >
-              {showAddTask ? <X size={14} /> : <Plus size={14} />}
-              {showAddTask ? "بستن" : "افزودن تسک"}
+              {showAddTask ? <X size={15} /> : <Plus size={15} />}
+              <span>{showAddTask ? "بستن فرم" : "افزودن تسک"}</span>
             </button>
-
-            <h3
-              className="d-flex align-items-center gap-2 mb-0"
-              style={{
-                fontSize: "14px",
-                fontWeight: 700,
-                color: "#1f2937",
-              }}
-            >
-              <BookOpen size={16} color="#6255f5" />
-              برنامه امروز شما
-            </h3>
           </div>
+        </header>
 
-          {taskActionError && (
-            <div
-              className="mb-2"
-              style={{
-                border: "1px solid #fecaca",
-                background: "#fef2f2",
-                color: "#dc2626",
-                borderRadius: "14px",
-                padding: "10px 12px",
-                fontSize: "12px",
-              }}
-            >
-              {taskActionError}
-            </div>
-          )}
-
-          {showAddTask && (
-            <TaskEditor
-              values={taskForm}
-              onChange={setTaskForm}
-              onSubmit={handleAddTask}
-              onCancel={() => setShowAddTask(false)}
-              saving={savingTask}
-              submitLabel="افزودن"
-            />
-          )}
-
-          {safeTasks.length === 0 ? (
-            <div
-              className="bg-white text-center"
-              style={{
-                border: "1px dashed #d1d5db",
-                borderRadius: "20px",
-                padding: "32px",
-                color: "#9ca3af",
-                fontSize: "12px",
-              }}
-            >
-              {programStartsTomorrow
-                ? `برنامه هفتگی شما از فردا شروع می‌شود. ${upcomingTasksCount || ""} تسک برای فردا آماده است.`
-                : "هنوز کاری برای امروز ثبت نشده است. از بخش برنامه‌ریز، برنامه هفتگی بگیرید."}
-            </div>
-          ) : (
-            <div className="d-flex flex-column gap-2">
-              {safeTasks.map((task, index) => {
-                const categoryStyles = getCategoryStyles(task?.category);
-                const isEditing = editingTaskId === task?.id;
-
-                if (isEditing) {
-                  return (
-                    <TaskEditor
-                      key={task?.id ?? index}
-                      values={editingForm}
-                      onChange={setEditingForm}
-                      onSubmit={handleSaveTask}
-                      onCancel={() => setEditingTaskId(null)}
-                      saving={savingTask}
-                      submitLabel="ذخیره"
-                    />
-                  );
-                }
-
-                return (
-                  <div
-                    key={task?.id ?? index}
-                    onClick={() => handleToggleTask(task)}
-                    className="d-flex justify-content-between align-items-center gap-3 flex-wrap"
-                    style={{
-                      padding: "16px",
-                      borderRadius: "20px",
-                      cursor: onToggleTask ? "pointer" : "default",
-                      transition: "all 0.2s ease",
-                      border: task?.completed
-                        ? "1px solid #bbf7d0"
-                        : "1px solid #f1f3f5",
-                      background: task?.completed ? "#ecfdf5" : "#ffffff",
-                      color: task?.completed ? "#6b7280" : "#1f2937",
-                      boxShadow: "0 2px 8px rgba(15,23,42,0.04)",
-                    }}
-                  >
-                    <div className="d-flex align-items-center gap-3">
-                      {task?.completed ? (
-                        <CheckCircle2 size={20} color="#10b981" />
-                      ) : (
-                        <Circle size={20} color="#d1d5db" />
-                      )}
-
-                      <div className="d-flex flex-column text-end">
-                        <span
-                          style={{
-                            fontSize: "13px",
-                            fontWeight: 700,
-                            textDecoration: task?.completed
-                              ? "line-through"
-                              : "none",
-                            color: task?.completed ? "#9ca3af" : "#1f2937",
-                          }}
-                        >
-                          {task?.title || "بدون عنوان"}
-                        </span>
-
-                        <span
-                          className="d-flex align-items-center gap-1 mt-1"
-                          style={{
-                            fontSize: "10px",
-                            color: "#9ca3af",
-                            fontWeight: 500,
-                          }}
-                        >
-                          <Clock size={11} />
-                          {task?.duration || "زمان مشخص نشده"}
-                        </span>
-                      </div>
-                    </div>
-
-                    <span
-                      style={{
-                        fontSize: "10px",
-                        fontWeight: 700,
-                        padding: "4px 8px",
-                        borderRadius: "8px",
-                        ...categoryStyles,
-                      }}
-                    >
-                      {task?.category || "عمومی"}
-                    </span>
-
-                    <div className="d-flex align-items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          startEditTask(task);
-                        }}
-                        className="btn btn-light border d-inline-flex align-items-center justify-content-center"
-                        style={{ width: "34px", height: "34px", borderRadius: "10px", padding: 0 }}
-                        aria-label="ویرایش تسک"
-                      >
-                        <Edit3 size={14} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          handleDeleteTask(task.id);
-                        }}
-                        className="btn btn-light border d-inline-flex align-items-center justify-content-center"
-                        style={{ width: "34px", height: "34px", borderRadius: "10px", padding: 0, color: "#dc2626" }}
-                        aria-label="حذف تسک"
-                        disabled={savingTask}
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* بخش تمرکز */}
-        <div
-          className="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3"
+        {/* Compact Single-Line Stats Ribbon */}
+        <section
           style={{
-            background: "rgba(245,158,11,0.1)",
-            border: "1px solid rgba(245,158,11,0.15)",
-            borderRadius: "20px",
-            padding: "16px",
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+            gap: "12px",
+            marginBottom: "20px",
           }}
         >
-          <div className="text-center text-md-end">
-            <h4
-              className="mb-1"
-              style={{
-                fontSize: "12px",
-                fontWeight: 700,
-                color: "#92400e",
-              }}
-            >
-              حالت تمرکز عمیق
-            </h4>
-            <p
-              className="mb-0"
-              style={{
-                fontSize: "11px",
-                color: "rgba(146,64,14,0.85)",
-                lineHeight: "1.9",
-                fontWeight: 300,
-              }}
-            >
-              یک بازه ۲۵ دقیقه‌ای مطالعه عمیق را شروع کنید و با تمرکز کامل
-              پیش بروید.
-            </p>
-          </div>
-
-          <Link
-            type="button"
-            to="/focustimer"
-            className="btn text-white fw-bold"
+          <div
             style={{
-              background: "#d97706",
+              background: "#FFFFFF",
+              border: "1px solid #E1E5E1",
               borderRadius: "14px",
-              fontSize: "11px",
-              padding: "8px 16px",
-              border: "none",
+              padding: "10px 14px",
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
             }}
           >
-            شروع تایمر
-          </Link>
-        </div>
+            <div
+              style={{
+                width: "32px",
+                height: "32px",
+                borderRadius: "9px",
+                background: "rgba(58, 135, 120, 0.12)",
+                color: "#3A8778",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              <Check size={16} strokeWidth={2.5} />
+            </div>
+            <div>
+              <span style={{ display: "block", fontSize: "10.5px", color: "#55625F" }}>پیشرفت امروز</span>
+              <strong style={{ fontSize: "14px", color: "#121A18", fontWeight: 800 }}>{currentProgress}٪ انجام‌شده</strong>
+            </div>
+          </div>
+
+          <div
+            style={{
+              background: "#FFFFFF",
+              border: "1px solid #E1E5E1",
+              borderRadius: "14px",
+              padding: "10px 14px",
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+            }}
+          >
+            <div
+              style={{
+                width: "32px",
+                height: "32px",
+                borderRadius: "9px",
+                background: "rgba(245, 158, 11, 0.12)",
+                color: "#D97706",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              <Flame size={16} />
+            </div>
+            <div>
+              <span style={{ display: "block", fontSize: "10.5px", color: "#55625F" }}>استمرار مداوم</span>
+              <strong style={{ fontSize: "14px", color: "#121A18", fontWeight: 800 }}>{streakCount} روز پیوسته</strong>
+            </div>
+          </div>
+
+          <div
+            style={{
+              background: "#FFFFFF",
+              border: "1px solid #E1E5E1",
+              borderRadius: "14px",
+              padding: "10px 14px",
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+            }}
+          >
+            <div
+              style={{
+                width: "32px",
+                height: "32px",
+                borderRadius: "9px",
+                background: "rgba(168, 85, 247, 0.12)",
+                color: "#9333EA",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              <Sparkles size={16} />
+            </div>
+            <div>
+              <span style={{ display: "block", fontSize: "10.5px", color: "#55625F" }}>امتیاز تجربه (XP)</span>
+              <strong style={{ fontSize: "14px", color: "#121A18", fontWeight: 800 }}>{xpPoints} XP</strong>
+            </div>
+          </div>
+
+          <div
+            style={{
+              background: "#FFFFFF",
+              border: "1px solid #E1E5E1",
+              borderRadius: "14px",
+              padding: "10px 14px",
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+            }}
+          >
+            <div
+              style={{
+                width: "32px",
+                height: "32px",
+                borderRadius: "9px",
+                background: "rgba(59, 130, 246, 0.12)",
+                color: "#2563EB",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              <Target size={16} />
+            </div>
+            <div>
+              <span style={{ display: "block", fontSize: "10.5px", color: "#55625F" }}>هدف رتبه</span>
+              <strong style={{ fontSize: "14px", color: "#121A18", fontWeight: 800 }}>{targetRankText}</strong>
+            </div>
+          </div>
+        </section>
+
+        {/* Main 2-Column Focus Layout */}
+        <section className="today-page-main-grid">
+          {/* Main Tasks Panel (Front & Center) */}
+          <section className="today-page-panel">
+            <div className="today-page-panel-header">
+              <div className="today-page-panel-title">
+                <div className="today-page-panel-icon">
+                  <BookOpen size={17} />
+                </div>
+                <div>
+                  <h2>تسک‌های مطالعه امروز</h2>
+                  <span>
+                    {safeTasks.length
+                      ? `${completedCount} از ${safeTasks.length} کار تکمیل شده`
+                      : "در انتظار ثبت کارهای امروز"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {taskActionError && (
+              <div className="today-page-error">{taskActionError}</div>
+            )}
+
+            {showAddTask && (
+              <div className="today-page-editor-wrap">
+                <TaskEditor
+                  values={taskForm}
+                  onChange={setTaskForm}
+                  onSubmit={handleAddTask}
+                  onCancel={() => setShowAddTask(false)}
+                  saving={savingTask}
+                  submitLabel="افزودن تسک"
+                />
+              </div>
+            )}
+
+            {safeTasks.length === 0 ? (
+              <div className="today-page-empty">
+                <div className="today-page-empty-icon">
+                  <BookOpen size={22} />
+                </div>
+                <h3>
+                  {programStartsTomorrow
+                    ? "برنامه مطالعاتی از فردا آغاز می‌شود"
+                    : "هنوز تسکی برای امروز ثبت نشده است"}
+                </h3>
+                <p>
+                  {programStartsTomorrow
+                    ? `${upcomingTasksCount || ""} تسک برای فردا در انتظار شماست.`
+                    : "می‌توانید با دکمه بالا تسک جدید اضافه کنید یا برنامه هفتگی خود را تنظیم نمایید."}
+                </p>
+                <Link to="/planningassistant" className="today-page-empty-button">
+                  رفتن به دستیار برنامه‌ریزی
+                  <ArrowLeft size={14} />
+                </Link>
+              </div>
+            ) : (
+              <div className="today-page-task-list">
+                {safeTasks.map((task, index) => {
+                  const isEditing = editingTaskId === task?.id;
+
+                  if (isEditing) {
+                    return (
+                      <div key={task?.id ?? index} className="today-page-edit-row">
+                        <TaskEditor
+                          values={editingForm}
+                          onChange={setEditingForm}
+                          onSubmit={handleSaveTask}
+                          onCancel={() => setEditingTaskId(null)}
+                          saving={savingTask}
+                          submitLabel="ذخیره تغییرات"
+                        />
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <article
+                      key={task?.id ?? index}
+                      className={`today-page-task ${task?.completed ? "is-completed" : ""}`}
+                    >
+                      <button
+                        type="button"
+                        className={`today-page-check ${task?.completed ? "checked" : ""}`}
+                        onClick={() => handleToggleTask(task)}
+                        aria-label={task?.completed ? "بازگشت به انجام نشده" : "علامت‌گذاری به عنوان انجام‌شده"}
+                      >
+                        {task?.completed && <Check size={14} strokeWidth={3} />}
+                      </button>
+
+                      <div className="today-page-task-content">
+                        <h3>{task?.title || "بدون عنوان"}</h3>
+                        <div className="today-page-task-meta">
+                          <span>
+                            <Clock size={12} />
+                            {task?.duration || "زمان مشخص نشده"}
+                          </span>
+                          {task?.completed && (
+                            <span className="today-page-done-text">انجام شد</span>
+                          )}
+                        </div>
+                      </div>
+
+                      <span className={getCategoryClass(task?.category)}>
+                        {task?.category || "عمومی"}
+                      </span>
+
+                      <div className="today-page-task-actions">
+                        <button
+                          type="button"
+                          onClick={() => startEditTask(task)}
+                          className="today-page-icon-button"
+                          aria-label="ویرایش تسک"
+                        >
+                          <Edit3 size={14} />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteTask(task.id)}
+                          className="today-page-icon-button danger"
+                          aria-label="حذف تسک"
+                          disabled={savingTask}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="today-page-panel-footer">
+              <Link to="/planningassistant" className="today-page-week-link">
+                مشاهده و ویرایش کل برنامه هفتگی
+                <ArrowLeft size={14} />
+              </Link>
+            </div>
+          </section>
+
+          {/* Quiet Tools Sidebar (Single instance of Focus & Tutor) */}
+          <aside className="today-page-tools">
+            {/* Focus Timer Widget */}
+            <div className="today-page-timer-card">
+              <div className="today-page-timer-decoration" />
+              <div className="today-page-timer-label">
+                <Clock size={15} />
+                تایمر تمرکز پومودورو
+              </div>
+              <div className="today-page-timer">25:00</div>
+              <p>جلسه مطالعه عمیق و بدون حواس‌پرتی</p>
+              <Link to="/focustimer" className="today-page-timer-button">
+                شروع جلسه تمرکز
+                <ArrowLeft size={14} />
+              </Link>
+            </div>
+
+            {/* AI Tutor Card */}
+            <div className="today-page-tutor-card">
+              <div className="today-page-tutor-icon">
+                <MessageSquare size={17} />
+              </div>
+              <h3>اشکال درسی داری؟</h3>
+              <p>معلم هوشمند منتورا آماده است سوالات و تست‌های دشوار را برایت حل کند.</p>
+              <Link to="/tutor" className="today-page-tutor-button">
+                پرسش از معلم هوشمند
+                <ArrowLeft size={14} />
+              </Link>
+            </div>
+          </aside>
+        </section>
       </div>
-    </div>
+    </main>
   );
 }
 
-function TaskEditor({ values, onChange, onSubmit, onCancel, saving, submitLabel }) {
+function TaskEditor({
+  values,
+  onChange,
+  onSubmit,
+  onCancel,
+  saving,
+  submitLabel,
+}) {
   const updateField = (field, value) => {
-    onChange((prev) => ({ ...prev, [field]: value }));
+    onChange((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
   };
 
   return (
-    <form
-      onSubmit={onSubmit}
-      className="bg-white mb-2"
-      style={{
-        border: "1px solid #e5e7eb",
-        borderRadius: "18px",
-        padding: "14px",
-        boxShadow: "0 2px 8px rgba(15,23,42,0.04)",
-      }}
-    >
-      <div className="row g-2 align-items-end">
-        <div className="col-12 col-md-4">
-          <label className="w-100">
-            <span className="d-block mb-1 fw-bold text-muted" style={{ fontSize: "10px" }}>
-              عنوان
-            </span>
-            <input
-              value={values.title}
-              onChange={(event) => updateField("title", event.target.value)}
-              className="form-control text-end"
-              style={taskInputStyle}
-              placeholder="مثلاً حسابان - تست"
-            />
-          </label>
+    <form onSubmit={onSubmit} className="today-page-editor">
+      <div className="today-page-editor-title">
+        <div>
+          <strong>{submitLabel === "افزودن تسک" ? "تسک جدید" : "ویرایش تسک"}</strong>
+          <span>عنوان، بازه زمانی و درس مربوطه را وارد کنید.</span>
+        </div>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="today-page-close-editor"
+          aria-label="انصراف"
+        >
+          <X size={15} />
+        </button>
+      </div>
+
+      <div className="today-page-editor-grid">
+        <div className="today-page-field today-page-field-span-2">
+          <label htmlFor="task-title-input">عنوان تسک</label>
+          <input
+            id="task-title-input"
+            type="text"
+            value={values.title}
+            onChange={(e) => updateField("title", e.target.value)}
+            placeholder="مثلاً: تست‌زنی ژنتیک ۱۰ تست"
+            autoFocus
+          />
         </div>
 
-        <div className="col-12 col-md-3">
-          <label className="w-100">
-            <span className="d-block mb-1 fw-bold text-muted" style={{ fontSize: "10px" }}>
-              ساعت / مدت
-            </span>
+        <div className="today-page-field">
+          <label htmlFor="task-start-time">زمان شروع و پایان</label>
+          <div className="today-page-time-fields">
             <input
-              value={values.duration}
-              onChange={(event) => updateField("duration", event.target.value)}
-              className="form-control text-end"
-              style={taskInputStyle}
-              placeholder="08:00 تا 09:30"
+              id="task-start-time"
+              type="time"
+              value={values.startTime}
+              onChange={(e) => updateField("startTime", e.target.value)}
             />
-          </label>
-        </div>
-
-        <div className="col-12 col-md-2">
-          <label className="w-100">
-            <span className="d-block mb-1 fw-bold text-muted" style={{ fontSize: "10px" }}>
-              دسته
-            </span>
+            <span>تا</span>
             <input
-              value={values.category}
-              onChange={(event) => updateField("category", event.target.value)}
-              className="form-control text-end"
-              style={taskInputStyle}
-              placeholder="درس"
+              type="time"
+              value={values.endTime}
+              onChange={(e) => updateField("endTime", e.target.value)}
             />
-          </label>
-        </div>
-
-        <div className="col-12 col-md-3">
-          <div className="d-flex gap-2">
-            <button
-              type="submit"
-              disabled={saving}
-              className="btn flex-fill d-inline-flex align-items-center justify-content-center gap-1 fw-bold"
-              style={{
-                borderRadius: "12px",
-                background: "#10b981",
-                color: "#fff",
-                border: "none",
-                fontSize: "12px",
-                padding: "10px",
-              }}
-            >
-              <Save size={14} />
-              {saving ? "در حال ذخیره..." : submitLabel}
-            </button>
-            <button
-              type="button"
-              onClick={onCancel}
-              className="btn btn-light border d-inline-flex align-items-center justify-content-center"
-              style={{ width: "42px", borderRadius: "12px" }}
-              aria-label="لغو"
-            >
-              <X size={15} />
-            </button>
           </div>
         </div>
+
+        <div className="today-page-field">
+          <label htmlFor="task-category-select">درس</label>
+          <select
+            id="task-category-select"
+            value={values.category}
+            onChange={(e) => updateField("category", e.target.value)}
+          >
+            <option value="عمومی">عمومی</option>
+            <option value="زیست">زیست‌شناسی</option>
+            <option value="شیمی">شیمی</option>
+            <option value="فیزیک">فیزیک</option>
+            <option value="ریاضی">ریاضی</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="today-page-editor-actions">
+        <button
+          type="submit"
+          className="today-page-save-button"
+          disabled={saving}
+        >
+          <Save size={14} />
+          {saving ? "در حال ثبت..." : submitLabel}
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="today-page-cancel-button"
+          disabled={saving}
+        >
+          انصراف
+        </button>
       </div>
     </form>
   );
 }
-
-const taskInputStyle = {
-  borderRadius: "12px",
-  background: "#f8fafc",
-  fontSize: "12px",
-  fontWeight: 700,
-};

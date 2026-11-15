@@ -13,6 +13,8 @@ import {
   UserCog,
 } from "lucide-react";
 import { apiJson } from "../utils/api";
+import ProviderDiagnostics, { TransportDetails } from "./ProviderDiagnostics";
+import AdminAffiliates from "./AdminAffiliates";
 
 const tabs = [
   { key: "dashboard", label: "داشبورد", icon: BarChart3 },
@@ -20,8 +22,9 @@ const tabs = [
   { key: "support", label: "پشتیبانی", icon: LifeBuoy },
   { key: "usage", label: "مصرف API", icon: Database },
   { key: "errors", label: "خطاها", icon: AlertTriangle },
-  { key: "providers", label: "Providerها", icon: KeyRound },
+  { key: "providers", label: "سرویس‌ها و تشخیص اتصال", icon: KeyRound },
   { key: "audit", label: "Audit", icon: ClipboardList },
+  { key: "affiliates", label: "همکاری در فروش", icon: UserCog },
 ];
 
 const statusLabels = {
@@ -46,7 +49,7 @@ function Stat({ label, value }) {
   return (
     <div className="card border-0 shadow-sm p-3 h-100" style={{ background: "rgba(255, 255, 255, 0.7)", backdropFilter: "blur(10px)", borderRadius: "16px" }}>
       <span className="text-secondary small fw-bold d-block mb-1">{label}</span>
-      <strong className="fs-4 text-indigo" style={{ color: "#4f46e5" }}>{value ?? 0}</strong>
+      <strong className="fs-4 text-indigo" style={{ color: "#256A6C" }}>{value ?? 0}</strong>
     </div>
   );
 }
@@ -134,6 +137,13 @@ export default function AdminConsole() {
 
   const loadErrors = async () => setErrors(await adminFetch("/api/admin/errors"));
   const loadProviders = async () => setProviders(await adminFetch("/api/admin/providers"));
+  const runDiagnostics = async mode => {
+    const data = await adminFetch("/api/admin/providers/diagnostics", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mode }),
+    });
+    await loadProviders();
+    return data.report;
+  };
   const loadAudit = async () => {
     const data = await adminFetch("/api/admin/audit-logs");
     setAudit(data.logs || []);
@@ -199,10 +209,14 @@ export default function AdminConsole() {
 
   useEffect(() => {
     loadAdmin();
+    // The initial access check must not rerun when render-local fetch helpers are recreated.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     loadActiveTab();
+    // Data refresh is deliberately keyed only to the authenticated admin and selected tab.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [admin, activeTab]);
 
   if (accessError && !admin) {
@@ -227,7 +241,7 @@ export default function AdminConsole() {
         </div>
         <button 
           type="button" 
-          className="btn btn-light rounded-circle shadow-sm border p-2 d-flex align-items-center justify-content-center" 
+          className="btn btn-outline rounded-circle shadow-sm p-2 d-flex align-items-center justify-content-center" 
           onClick={loadActiveTab} 
           disabled={loading}
         >
@@ -249,7 +263,7 @@ export default function AdminConsole() {
                   ? "btn-indigo text-white" 
                   : "btn-light text-secondary"
               }`}
-              style={isActive ? { background: "linear-gradient(135deg, #6255f5 0%, #4f46e5 100%)" } : {}}
+              style={isActive ? { background: "linear-gradient(135deg, #2E7F81 0%, #256A6C 100%)" } : {}}
               onClick={() => setActiveTab(tab.key)}
             >
               <Icon size={16} />
@@ -301,7 +315,7 @@ export default function AdminConsole() {
                 placeholder="جستجو با نام، موبایل، ایمیل، رشته..."
               />
             </div>
-            <button type="submit" className="btn text-white px-4 border-0" style={{ background: "linear-gradient(135deg, #6255f5 0%, #4f46e5 100%)", borderRadius: "8px" }}>جستجو</button>
+            <button type="submit" className="btn text-white px-4 border-0" style={{ background: "linear-gradient(135deg, #2E7F81 0%, #256A6C 100%)", borderRadius: "8px" }}>جستجو</button>
           </form>
           <div className="row g-4">
             <div className="col-12 col-lg-6">
@@ -353,7 +367,7 @@ export default function AdminConsole() {
               <option value="resolved">حل شده</option>
               <option value="closed">بسته</option>
             </select>
-            <button type="button" className="btn text-white px-4 border-0" style={{ background: "linear-gradient(135deg, #6255f5 0%, #4f46e5 100%)", borderRadius: "8px" }} onClick={loadTickets}>اعمال فیلتر</button>
+            <button type="button" className="btn text-white px-4 border-0" style={{ background: "linear-gradient(135deg, #2E7F81 0%, #256A6C 100%)", borderRadius: "8px" }} onClick={loadTickets}>اعمال فیلتر</button>
           </div>
           <div className="row g-4">
             <div className="col-12 col-lg-6">
@@ -396,7 +410,7 @@ export default function AdminConsole() {
               onChange={(event) => setUsageFilters((prev) => ({ ...prev, operation: event.target.value }))}
               placeholder="operation"
             />
-            <button type="button" className="btn text-white px-4 border-0" style={{ background: "linear-gradient(135deg, #6255f5 0%, #4f46e5 100%)", borderRadius: "8px" }} onClick={loadUsage}>اعمال</button>
+            <button type="button" className="btn text-white px-4 border-0" style={{ background: "linear-gradient(135deg, #2E7F81 0%, #256A6C 100%)", borderRadius: "8px" }} onClick={loadUsage}>اعمال</button>
           </div>
           {usage && (
             <>
@@ -447,10 +461,13 @@ export default function AdminConsole() {
               </div>
             ))}
           </div>
+          <ProviderDiagnostics runtime={providers.runtime} reports={providers.diagnostics || []} onRun={runDiagnostics} />
         </section>
       )}
 
       {/* محتوای تب حسابرسی */}
+      {activeTab === "affiliates" && admin && <AdminAffiliates admin={admin} />}
+
       {activeTab === "audit" && (
         <section className="mb-4">
           <div className="table-responsive bg-white rounded-3 shadow-sm border">
@@ -624,7 +641,7 @@ function TicketDetail({ ticket, reply, setReply, sendReply }) {
             </select>
           </div>
           <div className="col-6">
-            <button type="submit" className="btn text-white w-100 border-0" style={{ background: "linear-gradient(135deg, #6255f5 0%, #4f46e5 100%)", borderRadius: "8px" }}>ارسال پاسخ</button>
+            <button type="submit" className="btn text-white w-100 border-0" style={{ background: "linear-gradient(135deg, #2E7F81 0%, #256A6C 100%)", borderRadius: "8px" }}>ارسال پاسخ</button>
           </div>
         </div>
       </form>
@@ -645,6 +662,7 @@ function LogList({ title, items, type }) {
               <span className="small">{item.model || item.source || "-"} | {statusLabels[item.status] || item.status || item.level}</span>
             </div>
             {item.errorMessage && <div className="small text-danger my-1">{item.errorType}: {item.errorMessage}</div>}
+            {item.metadata?.transport && <TransportDetails trace={item.metadata.transport} />}
             <small className="text-muted d-block" style={{ fontSize: "10px" }}>{formatDate(item.createdAt)}</small>
           </div>
         ))}

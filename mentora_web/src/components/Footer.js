@@ -1,20 +1,25 @@
 import React from "react";
 import { Heart, Instagram, Send, Mail } from "lucide-react";
+import AdContainer from "./Adcontainer";
+import BottomAd from './BottomAd';
 
 export default function AppFooter() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer
-      className="bg-white mt-4"
-      style={{
-        fontFamily: "Vazir, sans-serif",
-        borderTop: "1px solid #eef2f7",
-      }}
-      aria-label="فوتر سایت منتورا"
-    >
-      <style>
-        {`
+    <>
+      <BottomAd />
+      <AdContainer />
+      <footer
+        className="bg-white mt-4"
+        style={{
+          fontFamily: "Vazir, sans-serif",
+          borderTop: "1px solid #EFEEE7",
+        }}
+        aria-label="فوتر سایت منتورا"
+      >
+        <style>
+          {`
           .footer-container {
             padding: 28px 16px;
           }
@@ -41,12 +46,12 @@ export default function AppFooter() {
             font-size: 14px;
             font-weight: 900;
             margin-bottom: 14px;
-            color: #111827;
+            color: #14201E;
           }
 
           .footer-link {
             display: block;
-            color: #6b7280;
+            color: #7C8683;
             text-decoration: none;
             font-size: 13px;
             margin-bottom: 10px;
@@ -54,7 +59,7 @@ export default function AppFooter() {
           }
 
           .footer-link:hover {
-            color: #6255f5;
+            color: var(--primary, #3A8778);
             transform: translateX(-2px);
           }
 
@@ -68,8 +73,8 @@ export default function AppFooter() {
             width: 38px;
             height: 38px;
             border-radius: 12px;
-            background: #f8fafc;
-            border: 1px solid #eef2f7;
+            background: #F7F6F1;
+            border: 1px solid #E3E1D8;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -77,8 +82,8 @@ export default function AppFooter() {
           }
 
           .footer-socials a:hover {
-            background: #6255f5;
-            border-color: #6255f5;
+            background: var(--primary, #3A8778);
+            border-color: var(--primary, #3A8778);
             transform: translateY(-2px);
           }
 
@@ -94,7 +99,7 @@ export default function AppFooter() {
 
           .trust-box {
             background: #fff;
-            border: 1px solid #eef2f7;
+            border: 1px solid #E3E1D8;
             border-radius: 18px;
             padding: 12px;
             display: flex;
@@ -118,18 +123,18 @@ export default function AppFooter() {
 
           .footer-about-text {
             font-size: 12px;
-            color: #6b7280;
+            color: #7C8683;
             line-height: 2;
             margin: 0;
           }
 
           .footer-bottom {
-            border-top: 1px solid #f3f4f6;
+            border-top: 1px solid #EFEEE7;
             margin-top: 32px;
             padding-top: 18px;
             text-align: center;
             font-size: 11px;
-            color: #9ca3af;
+            color: #9AA5A2;
           }
 
           @media (max-width: 767px) {
@@ -151,150 +156,135 @@ export default function AppFooter() {
             }
           }
         `}
-      </style>
-
-      <div
-        className="container"
-        style={{
-          maxWidth: "1150px",
-          direction: "rtl",
-        }}
-      >
-        <div className="footer-container">
-
-          <div className="footer-grid">
-
-            {/* درباره منتورا */}
-            <div className="footer-section">
-              <h2
-                className="d-flex align-items-center gap-2 mb-3 justify-content-center justify-content-md-start"
-                style={{
-                  fontSize: "20px",
-                  fontWeight: 900,
-                  color: "#6255f5",
-                }}
-              >
-                <img
-                  src="/logo-mark.png"
-                  alt=""
-                  aria-hidden="true"
+        </style>
+        <div
+          className="container"
+          style={{
+            maxWidth: "1150px",
+            direction: "rtl",
+          }}
+        >
+          <div className="footer-container">
+            <div className="footer-grid">
+              {/* درباره منتورا */}
+              <div className="footer-section">
+                <h2
+                  className="d-flex align-items-center gap-2 mb-3 justify-content-center justify-content-md-start"
                   style={{
-                    width: "28px",
-                    height: "28px",
-                    objectFit: "contain",
+                    fontSize: "20px",
+                    fontWeight: 900,
+                    color: "var(--primary, #3A8778)",
                   }}
-                />
-                منتورا
-              </h2>
-
-              <p className="footer-about-text">
-                منتورا یک پلتفرم هوشمند برنامه‌ریزی درسی و مدیریت مطالعه است
-                که به دانش‌آموزان کمک می‌کند تمرکز، برنامه‌ریزی و پیشرفت
-                تحصیلی خود را بهتر مدیریت کنند.
-              </p>
-            </div>
-
-            {/* دسترسی سریع */}
-            <div className="footer-section">
-              <h6 className="footer-section-title">
-                دسترسی سریع
-              </h6>
-
-              <a href="/home" className="footer-link">
-                داشبورد اصلی
-              </a>
-
-              <a href="/reports" className="footer-link">
-                تحلیل عملکرد
-              </a>
-
-              <a href="/subscription" className="footer-link">
-                ارتقای اشتراک
-              </a>
-
-              <a href="/aboutus" className="footer-link">
-                درباره ما
-              </a>
-            </div>
-
-            {/* ارتباط با ما */}
-            <div className="footer-section">
-              <h6 className="footer-section-title">
-                ارتباط با ما
-              </h6>
-
-              <a
-                href="mailto:mentora.support1@gmail.com"
-                className="footer-link d-flex align-items-center gap-2 justify-content-center justify-content-md-start"
-              >
-                <Mail size={15} />
-                mentora.support1@gmail.com
-              </a>
-
-              <div className="footer-socials">
-                <a
-                  href="https://www.instagram.com/mentoralearn"
-                  aria-label="اینستاگرام منتورا"
                 >
-                  <Instagram size={18} color="#6b7280" />
+                  <img
+                    src="/logo-mark.png"
+                    alt=""
+                    aria-hidden="true"
+                    style={{
+                      width: "28px",
+                      height: "28px",
+                      objectFit: "contain",
+                    }}
+                  />
+                  منتورا
+                </h2>
+
+                <p className="footer-about-text">
+                  منتورا یک پلتفرم هوشمند برنامه‌ریزی درسی و مدیریت مطالعه است
+                  که به دانش‌آموزان کمک می‌کند تمرکز، برنامه‌ریزی و پیشرفت
+                  تحصیلی خود را بهتر مدیریت کنند.
+                </p>
+              </div>
+
+              {/* دسترسی سریع */}
+              <div className="footer-section">
+                <h6 className="footer-section-title">دسترسی سریع</h6>
+
+                <a href="/home" className="footer-link">
+                  داشبورد اصلی
                 </a>
 
-                <a
-                  href="https://t.me/MentoraSupport1"
-                  aria-label="تلگرام منتورا"
-                >
-                  <Send size={18} color="#6b7280" />
+                <a href="/reports" className="footer-link">
+                  تحلیل عملکرد
+                </a>
+
+                <a href="/subscription" className="footer-link">
+                  ارتقای اشتراک
+                </a>
+
+                <a href="/aboutus" className="footer-link">
+                  درباره ما
                 </a>
               </div>
-            </div>
 
-            <div className="footer-section">
-              <h6 className="footer-section-title">
-                مجوزها و پرداخت
-              </h6>
+              {/* ارتباط با ما */}
+              <div className="footer-section">
+                <h6 className="footer-section-title">ارتباط با ما</h6>
 
-              <div className="footer-trust-column">
+                <a
+                  href="mailto:mentora.support1@gmail.com"
+                  className="footer-link d-flex align-items-center gap-2 justify-content-center justify-content-md-start"
+                >
+                  <Mail size={15} />
+                  mentora.support1@gmail.com
+                </a>
 
-                <div className="trust-box">
+                <div className="footer-socials">
                   <a
-                    referrerPolicy="origin"
-                    target="_blank"
-                    rel="noreferrer"
-                    href="https://trustseal.enamad.ir/?id=752644&Code=eBufEsExjpps5gNxuGQsvuudVlFSQBug"
+                    href="https://www.instagram.com/mentoralearn"
+                    aria-label="اینستاگرام منتورا"
                   >
-                    <img
-                      referrerPolicy="origin"
-                      src="https://trustseal.enamad.ir/logo.aspx?id=752644&Code=eBufEsExjpps5gNxuGQsvuudVlFSQBug"
-                      alt="نماد اعتماد الکترونیکی"
-                      style={{ cursor: "pointer" }}
-                    />
+                    <Instagram size={18} color="#7C8683" />
+                  </a>
+
+                  <a
+                    href="https://t.me/MentoraSupport1"
+                    aria-label="تلگرام منتورا"
+                  >
+                    <Send size={18} color="#7C8683" />
                   </a>
                 </div>
+              </div>
 
-                <div className="trust-box">
-                  <img
-                    // src="https://i.pravatar.cc/100?img=12"
-                    alt="درگاه پرداخت امن"
-                  />
+              <div className="footer-section">
+                <h6 className="footer-section-title">مجوزها و پرداخت</h6>
+
+                <div className="footer-trust-column">
+                  <div className="trust-box">
+                    <a
+                      referrerPolicy="origin"
+                      target="_blank"
+                      rel="noreferrer"
+                      href="https://trustseal.enamad.ir/?id=753739&Code=XiEKVg1U0uzg1i8fiojCaCHNgB3qmlN8"
+                    >
+                      <img
+                        referrerPolicy="origin"
+                        src="https://trustseal.enamad.ir/logo.aspx?id=753739&Code=XiEKVg1U0uzg1i8fiojCaCHNgB3qmlN8"
+                        alt="نماد اعتماد الکترونیکی"
+                        style={{ cursor: "pointer" }}
+                        code="XiEKVg1U0uzg1i8fiojCaCHNgB3qmlN8"
+                      />
+                    </a>
+                  </div>
+
+                  <div className="trust-box">
+                    <img
+                      // src="https://i.pravatar.cc/100?img=12"
+                      alt="درگاه پرداخت امن"
+                    />
+                  </div>
                 </div>
-
               </div>
             </div>
 
+            <div className="footer-bottom">
+              تمامی حقوق محفوظ است © {currentYear} | ساخته شده با{" "}
+              <Heart size={12} color="#ef4444" className="d-inline" /> برای
+              دانش‌آموزان پرتلاش
+            </div>
           </div>
-
-          <div className="footer-bottom">
-            تمامی حقوق محفوظ است © {currentYear} | ساخته شده با{" "}
-            <Heart
-              size={12}
-              color="#ef4444"
-              className="d-inline"
-            />{" "}
-            برای دانش‌آموزان پرتلاش
-          </div>
-
         </div>
-      </div>
-    </footer>
+      </footer>
+    </>
   );
 }
